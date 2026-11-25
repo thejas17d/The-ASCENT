@@ -66,6 +66,7 @@ func _build() -> void:
 		kit.lamp(p, "work", Color(1.0, 0.45, 0.25), 0.9, 8.0)
 	kit.board(Vector3(-4.0, 1.5, 11.86), PI, rules.rules)
 	kit.note("c_tag", Vector3(1.5, 0.006, 9.8))
+	kit.item("voice_3", "cassette (voice note)", Vector3(-2.0, 0.0, 9.6), "tape", Color(0.75, 0.2, 0.15))
 	kit.stair_exit(Vector3(0, 0, -13.85), 0.0, "STAIRS ▲  8")
 	# the overseer: the Supervisor's body, dormant, lamp red, facing the stairs
 	overseer = Supervisor.new()

@@ -2,6 +2,7 @@ extends FloorBase
 ## Floor 2 — THE CORRIDOR: anomaly loop, lying rule board, Room 213.
 
 const Corridor := preload("res://scripts/floors/corridor.gd")
+const Leaderboard := preload("res://scripts/systems/leaderboard.gd")
 
 const START := Vector3(0, 0.05, 2.0)
 const END_Z := -45.0
@@ -25,14 +26,21 @@ var _knock_next := 0.0
 var _knock_age := 0.0
 var _knock_door: Node3D
 var _rng := RandomNumberGenerator.new()
+var daily := false               # Daily Corridor: same sequence for everyone today, endless
+var daily_date := ""
 
 func _ready() -> void:
 	_rng.randomize()
+	daily = GameState.mode == "daily"
+	if daily:
+		daily_date = Leaderboard.today()
+		_rng.seed = Leaderboard.seed_for(daily_date)
 	anomalies = _load_json("res://data/anomalies/floor_02.json")
 	rules = _load_json("res://data/floor_rules/floor_02.json")
+	inject_night_rule()
 	for n in _load_json("res://data/notes/floor_02.json"):
 		notes[n.id] = n
-	required = int(rules.get("required_streak", 8))
+	required = 9999 if daily else int(rules.get("required_streak", 8)) + (2 if GameState.night() else 0)
 	floor_index = 2
 	corridor = Corridor.new(); add_child(corridor)
 	corridor.set_rules(rules.rules)
@@ -41,13 +49,15 @@ func _ready() -> void:
 	streak = int(GameState.checkpoint.get("streak", 0))
 	if GameState.solved_floor(2):
 		streak = required     # you already found 213; it is still there
-	if GameState.altered_level(2) > 0:
-		for l in corridor.lights:
-			l.light_energy *= 0.75
+	corridor.light_scale = GameState.light_scale() * (0.75 if GameState.altered_level(2) > 0 else 1.0)
 	# only a brand-new floor gets a guaranteed clean first pass
 	_new_pass(streak == 0 and passes == 0 and not GameState.checkpoint.has("streak"))
 	hud.fade_to(0.0, 1.5)
+	if daily:
+		director.enabled = false
 	var intro := "FLOOR 2 — THE CORRIDOR\nRead the notice board on your left.   Esc pause · Tab inventory"
+	if daily:
+		intro = "DAILY CORRIDOR — %s\nThe same corridor for everyone today. One mistake ends the run.\nBest today: %d" % [daily_date, Leaderboard.best(daily_date)]
 	if GameState.checkpoint.has("streak"):
 		intro = "Checkpoint restored — tally %d." % streak
 	hud.message(intro, 7)
@@ -57,6 +67,7 @@ func _load_json(path: String) -> Variant:
 
 # ---------------------------------------------------------------- hooks
 func world_root() -> Node3D: return corridor
+func scales_own_lights() -> bool: return true
 func floor_lights() -> Array: return corridor.lights
 func hide_spot() -> Node3D: return corridor.hide_spot
 
@@ -80,6 +91,9 @@ func on_interact(t: Object) -> bool:
 	return false
 
 func on_breakdown() -> void:
+	if daily:
+		end_daily("BREAKDOWN.")
+		return
 	if busy:
 		Dread.reset(40.0)
 		return
@@ -96,7 +110,7 @@ func perform_floor_event(id: String) -> bool:
 
 # ---------------------------------------------------------------- pass flow
 func pick_anomaly(first: bool) -> String:
-	if first or streak >= required or _rng.randf() > ANOMALY_CHANCE:
+	if first or streak >= required or _rng.randf() > ANOMALY_CHANCE + (0.1 if GameState.night() else 0.0):
 		return ""
 	var pool := anomalies.filter(func(a): return a.id != _last)
 	return pool[_rng.randi_range(0, pool.size() - 1)].id
@@ -107,7 +121,13 @@ func _new_pass(first := false) -> void:
 	if current != "":
 		_last = current
 	clear_placed()
-	corridor.build(current, streak, streak >= required)
+	corridor.build(current, streak, streak >= required, _rng.randi() if daily else 0)
+	if daily:
+		player.teleport(START)
+		went_deep = false
+		_knock_left = 0.0
+		_knock_in = -1.0
+		return
 	# pickups and notes only ever appear in the start lobby, never in the
 	# judged corridor, so they can't be mistaken for anomalies
 	if not first and _rng.randf() < PICKUP_CHANCE:
@@ -134,6 +154,9 @@ func _judge(correct: bool, what: String) -> void:
 	if streak >= required:
 		_transition("The corridor resets. Room 213 is still open.", 0)
 		return
+	if daily and not correct:
+		end_daily(what + " Wrong. " + ("Nothing had changed." if current == "" else "You missed it: " + _desc(current) + "."))
+		return
 	if correct:
 		streak += 1
 		var hint := "" if current == "" else "  (" + _desc(current) + ")"
@@ -157,7 +180,23 @@ func violate(reason: String) -> void:
 	hud.glitch(1.2)
 	_transition(reason + "\nThe lights die. You wake at the start. The tally is gone.", 1)
 
+## Daily Corridor over: record the score, show the best, back to the title.
+func end_daily(why: String) -> void:
+	if busy:
+		return
+	busy = true
+	finished = true
+	player.input_enabled = false
+	var new_best := Leaderboard.submit(daily_date, streak)
+	await hud.fade_to(1.0, 0.6)
+	hud.message("%s\n\nDAILY CORRIDOR — %s\nScore: %d in a row%s\nBest today: %d" % [why, daily_date, streak,
+		"   — NEW BEST" if new_best else "", Leaderboard.best(daily_date)], 9999)
+	await get_tree().create_timer(5.0, false).timeout
+	GameState.go("res://scenes/menu.tscn")
+
 func _checkpoint() -> void:
+	if daily:
+		return
 	GameState.floor_num = 2
 	GameState.checkpoint = {"streak": streak}
 	GameState.save_game()
@@ -192,6 +231,8 @@ func _win() -> void:
 # ---------------------------------------------------------------- per frame
 func _process(d: float) -> void:
 	super._process(d)
+	if daily and not finished:
+		hud.set_status("DAILY CORRIDOR  ·  %s  ·  score %d  ·  best %d" % [daily_date, streak, Leaderboard.best(daily_date)])
 	if finished or busy:
 		return
 	var p := player.global_position

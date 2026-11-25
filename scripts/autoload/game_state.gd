@@ -7,6 +7,7 @@ const SAVE_PATH := "user://save.json"
 const SETTINGS_PATH := "user://settings.json"
 const ITEM_DEFAULTS := {"battery": 1, "chalk": 15, "diya": 2}
 const FLOOR_SCENES := {
+	9: "res://scenes/floor_09.tscn",
 	0: "res://scenes/floor_g.tscn", 1: "res://scenes/floor_01.tscn", 2: "res://scenes/floor_02.tscn",
 	3: "res://scenes/floor_03.tscn", 4: "res://scenes/floor_04.tscn", 5: "res://scenes/floor_05.tscn",
 	6: "res://scenes/floor_06.tscn", 7: "res://scenes/floor_07.tscn", 8: "res://scenes/floor_08.tscn",
@@ -15,7 +16,8 @@ const STAIRWELL := "res://scenes/stairwell.tscn"
 const ENDING := "res://scenes/ending.tscn"
 const LETHAL_FROM := 5      # floors >= this kill; below, failure sends you down a floor
 const FLOOR_NAMES := ["RECEPTION", "THE OFFICE", "THE CORRIDOR", "RECORDS", "THE RESIDENCE",
-	"THE HUNT", "THE INVERSION", "THE COLLAPSE", "THE ROOF"]
+	"THE HUNT", "THE INVERSION", "THE COLLAPSE", "THE ROOF", "THE BLUEPRINT"]
+const NG_PLUS_BONUS := {"battery": 2, "diya": 2}
 const DEFAULT_SETTINGS := {
 	"quality": -1,              # -1 = auto (High on desktop, Medium on mobile)
 	"fullscreen": false,
@@ -41,6 +43,8 @@ var unlocks := {}           # "floor9", "new_game_plus", endings seen
 var solved := {}            # floor -> true once its puzzle was completed
 var test_mode := false      # tests: record scene changes instead of performing them
 var last_scene_request := ""
+var mode := "normal"        # "normal" · "night" (Night Shift) · "daily" · "floor9"
+var ng_plus := false
 var settings := DEFAULT_SETTINGS.duplicate()
 var _applied_once := false
 
@@ -51,7 +55,9 @@ func _ready() -> void:
 	_load_unlocks()
 	new_game()
 
-func new_game() -> void:
+func new_game(run_mode := "normal", plus := false) -> void:
+	mode = run_mode
+	ng_plus = plus
 	floor_num = 0
 	checkpoint = {}
 	items = ITEM_DEFAULTS.duplicate()
@@ -63,6 +69,9 @@ func new_game() -> void:
 	solved = {}
 	carry = ""
 	stair_from = -1
+	if plus:
+		for k in NG_PLUS_BONUS:
+			items[k] = count(k) + NG_PLUS_BONUS[k]
 
 # ---------------------------------------------------------------- save
 func has_save() -> bool:
@@ -71,11 +80,26 @@ func has_save() -> bool:
 func floor_available(n: int) -> bool:
 	return FLOOR_SCENES.has(n)
 
+## Night Shift, Daily and Floor 9 helpers -------------------------------
+func night() -> bool:
+	return mode == "night"
+
+## Story runs save; side modes (daily corridor, floor 9) never touch the save.
+func story_run() -> bool:
+	return mode == "normal" or mode == "night"
+
+## Every light in the building is dimmer on the Night Shift.
+func light_scale() -> float:
+	return 0.6 if night() else 1.0
+
 func save_game() -> bool:
+	_remember()
+	if not story_run():
+		return true
 	var data := {
 		"version": 2, "floor": floor_num, "checkpoint": checkpoint, "items": items,
 		"choices": choices, "falls": falls, "deaths": deaths, "collectibles": collectibles,
-		"altered": altered, "solved": solved, "carry": carry, "dread": Dread.value, "unlocks": unlocks,
+		"altered": altered, "solved": solved, "carry": carry, "mode": mode, "ng_plus": ng_plus, "dread": Dread.value, "unlocks": unlocks,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
@@ -107,6 +131,8 @@ func load_game() -> bool:
 	for k in alt:
 		altered[int(k)] = int(alt[k])
 	carry = str(data.get("carry", ""))
+	mode = str(data.get("mode", "normal"))
+	ng_plus = bool(data.get("ng_plus", false))
 	solved = {}
 	for k in _dict(data.get("solved")):
 		solved[int(k)] = true
@@ -122,6 +148,22 @@ func _dict(v) -> Dictionary:
 func delete_save() -> void:
 	if has_save():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+
+## Memories: everything you've ever read or found, across all runs.
+func _remember() -> void:
+	var mem: Array = unlocks.get("memories", [])
+	var changed := false
+	for c in collectibles:
+		if not mem.has(c):
+			mem.append(c); changed = true
+	if changed:
+		unlocks["memories"] = mem
+		save_unlocks()
+
+func save_unlocks() -> void:
+	var f := FileAccess.open("user://unlocks.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(unlocks))
 
 ## Unlocks (endings seen, Floor 9, New Game+) survive finished runs.
 func _load_unlocks() -> void:
@@ -230,7 +272,7 @@ func _setup_input() -> void:
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"run": [KEY_SHIFT], "crouch": [KEY_CTRL], "interact": [KEY_E], "flashlight": [KEY_F],
 		"reload": [KEY_R], "chalk": [KEY_C], "diya": [KEY_G], "phone": [KEY_Q],
-		"breath": [KEY_SPACE], "inventory": [KEY_TAB], "pause": [KEY_ESCAPE, KEY_P],
+		"breath": [KEY_SPACE], "inventory": [KEY_TAB], "voice": [KEY_V], "pause": [KEY_ESCAPE, KEY_P],
 		"fullscreen": [KEY_F11],
 	}
 	for a in map:

@@ -13,7 +13,8 @@ var value := 0.0
 var _broken := false
 
 func add(v: float) -> void:
-	value = clamp(value + v * (GameState.settings.get("scare_intensity", 1.0) if v > 0 else 1.0), 0.0, 100.0)
+	var k: float = (GameState.settings.get("scare_intensity", 1.0) * (1.3 if GameState.night() else 1.0)) if v > 0 else 1.0
+	value = clamp(value + v * k, 0.0, 100.0)
 	changed.emit(value)
 	if value >= 100.0 and not _broken:
 		_broken = true

@@ -1,8 +1,26 @@
-{"floor": 4, "title": "THE RESIDENCE", "rules": [
-  {"id": "h_dinner", "text": "Dinner is at 8.", "class": "true",
-   "truth": "When the clock strikes eight you must be sitting in your chair at the dining table."},
-  {"id": "h_study", "text": "Do not open Papa's study.", "class": "false",
-   "truth": "The study must be opened. Its code is Arjun's birthday.", "clue": "A note slipped under the study door."},
-  {"id": "h_mother", "text": "Mother cannot see you. Do not make her try.", "class": "true",
-   "truth": "Standing in front of her, close, makes her try to look at you."}
-]}
+{
+  "floor": 4,
+  "title": "THE RESIDENCE",
+  "rules": [
+    {
+      "id": "h_dinner",
+      "text": "Dinner is at 8.",
+      "class": "true",
+      "truth": "When the clock strikes eight you must be sitting in your chair at the dining table."
+    },
+    {
+      "id": "h_study",
+      "text": "Do not open Papa's study.",
+      "class": "false",
+      "truth": "The study must be opened. Its code is Arjun's birthday.",
+      "clue": "A note slipped under the study door."
+    },
+    {
+      "id": "h_mother",
+      "text": "Mother cannot see you. Do not make her try.",
+      "class": "true",
+      "truth": "Standing in front of her, close, makes her try to look at you."
+    }
+  ],
+  "night_rule": "Eat everything on your plate."
+}

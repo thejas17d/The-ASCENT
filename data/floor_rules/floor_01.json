@@ -1,9 +1,26 @@
-{"floor": 1, "title": "THE OFFICE", "rules": [
-  {"id": "o_desks", "text": "Every desk must be empty before you leave.", "class": "true",
-   "truth": "The stair door stays locked until all six personal items are returned to their owners' lockers."},
-  {"id": "o_count", "text": "Count the chairs. There are 24.", "class": "true",
-   "truth": "There are 24 chairs: 12 at desks, 8 at the meeting table, 4 along the walls."},
-  {"id": "o_25", "text": "If there are 25, leave immediately.", "class": "incomplete",
-   "truth": "'Leave' means step back out through the entrance you came in by. Then return.",
-   "clue": "The monitors spell the count when the extra chair arrives."}
-]}
+{
+  "floor": 1,
+  "title": "THE OFFICE",
+  "rules": [
+    {
+      "id": "o_desks",
+      "text": "Every desk must be empty before you leave.",
+      "class": "true",
+      "truth": "The stair door stays locked until all six personal items are returned to their owners' lockers."
+    },
+    {
+      "id": "o_count",
+      "text": "Count the chairs. There are 24.",
+      "class": "true",
+      "truth": "There are 24 chairs: 12 at desks, 8 at the meeting table, 4 along the walls."
+    },
+    {
+      "id": "o_25",
+      "text": "If there are 25, leave immediately.",
+      "class": "incomplete",
+      "truth": "'Leave' means step back out through the entrance you came in by. Then return.",
+      "clue": "The monitors spell the count when the extra chair arrives."
+    }
+  ],
+  "night_rule": "Do not touch the monitors."
+}

@@ -44,7 +44,14 @@ func _ready() -> void:
 	_label.add_theme_font_size_override("font_size", 28)
 	add_child(_label)
 	var ending: String = GameState.choices.get("ending", "escape")
-	_lines = TRUTH if ending == "truth" else ESCAPE
+	_lines = (TRUTH if ending == "truth" else ESCAPE).duplicate()
+	GameState.unlocks["loops"] = int(GameState.unlocks.get("loops", 0)) + 1
+	var loops := int(GameState.unlocks.loops)
+	if ending == "escape" and loops > 1:
+		var nth := ["first", "second", "third", "fourth", "fifth"]
+		_lines.append("This is the %s building you have woken up in." % nth[loops - 1] if loops <= 5 else "You have stopped counting the buildings.")
+	if GameState.night():
+		_lines.insert(0, "(Night Shift)")
 	_show(0)
 
 func _show(i: int) -> void:
@@ -80,7 +87,8 @@ func _summary() -> void:
 		s += "\nThe loop continues.  (TRUTH needs the letter kept and all six freed.)\n"
 	if GameState.unlocks.get("floor9", false):
 		s += "\nYou never fell.  Something has opened above the roof:  FLOOR 9.\n"
-	s += "\nNew Game+ unlocked."
+	s += "\nNew Game+ (Night Shift) unlocked."
+	s += "\n\n— THE ASCENT —\nMade with Godot 4  ·  Textures: Poly Haven (CC0)  ·  All sound synthesised in code"
 	_label.text = s
 	_label.add_theme_font_size_override("font_size", 24)
 	var b := Button.new(); b.text = "Return to the title"
@@ -88,11 +96,5 @@ func _summary() -> void:
 	b.offset_top = -120; b.offset_bottom = -70; b.offset_left = -160; b.offset_right = 160
 	b.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/menu.tscn"))
 	add_child(b)
-	GameState.delete_save()   # the run is over; unlocks live in settings-independent save below
-	_save_unlocks()
-
-## Unlocks survive the finished run (stored next to settings).
-func _save_unlocks() -> void:
-	var f := FileAccess.open("user://unlocks.json", FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(GameState.unlocks))
+	GameState.delete_save()   # the run is over
+	GameState.save_unlocks()  # unlocks + memories survive it

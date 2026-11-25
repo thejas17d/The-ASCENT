@@ -61,6 +61,13 @@ func _ready() -> void:
 	_rng.randomize()
 	if cfg.is_empty():
 		cfg = JSON.parse_string(FileAccess.open("res://data/ai/supervisor.json", FileAccess.READ).get_as_text())
+	if GameState.night() and not cfg.get("night_applied", false):
+		cfg = cfg.duplicate()
+		for k in ["speed_patrol", "speed_investigate", "speed_search", "speed_chase"]:
+			cfg[k] = float(cfg[k]) * 1.15
+		cfg.hearing_range = float(cfg.hearing_range) * 1.2
+		cfg.sight_range = float(cfg.sight_range) * 1.1
+		cfg.night_applied = true
 	collision_layer = 4
 	collision_mask = 1
 	var cs := CollisionShape3D.new()

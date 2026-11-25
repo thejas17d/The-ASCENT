@@ -28,4 +28,4 @@ G→1 SITE OFFICE · 1→2 6 MEN. 6 NAMES. · 2→3 THE TALLY NEVER WIPES · 3�
 - Art: floors are kit-built from boxes with PBR textures; the Residence needs more domestic clutter, characters are primitive figures.
 - Floor 2's "altered" dimming only applies on the first pass after a fall.
 - Floor 6's shadow passes through walls (it's a ghost); only the mirror room holds it.
-- Floor 9 content, New Game+ and Night Shift are not built (Phase 6).
+- Floor 9, New Game+, Night Shift, Daily Corridor and Memories: see REPLAYABILITY.md.

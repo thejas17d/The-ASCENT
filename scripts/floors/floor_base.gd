@@ -76,6 +76,10 @@ func setup_common() -> void:
 	add_child(hum)
 	_make_dust()
 	Graphics.changed.connect(_on_graphics_changed)
+	if not scales_own_lights():
+		for l in floor_lights():
+			if is_instance_valid(l):
+				l.light_energy *= GameState.light_scale()
 
 func _make_dust() -> void:
 	_dust = GPUParticles3D.new()
@@ -125,6 +129,7 @@ func subtitle(t: String, secs := 2.0) -> void:
 
 # ---------------------------------------------------------------- hooks
 func world_root() -> Node3D: return self
+func scales_own_lights() -> bool: return false
 func on_item_taken(_id: String, _node: Node3D) -> bool: return false
 func on_use(_id: String, _node: Node3D) -> void: pass
 func apply_checkpoint(_cp: Dictionary) -> void: pass
@@ -151,6 +156,8 @@ func _process(d: float) -> void:
 		int(player.battery), GameState.count("battery"), GameState.count("chalk"), GameState.count("diya")])
 	if Input.is_action_just_pressed("inventory"):
 		_toggle_inventory()
+	if Input.is_action_just_pressed("voice"):
+		play_voice_note()
 	_dust.global_position = player.global_position + Vector3(0, 1.3, 0)
 	for dy in diyas.duplicate():
 		dy.t -= d
@@ -168,6 +175,27 @@ func _process(d: float) -> void:
 		_heart.volume_db = linear_to_db(clamp((Dread.value - 50.0) / 50.0, 0.05, 1.0))
 		_heart.play()
 		_heart_t = lerp(1.1, 0.5, (Dread.value - 55.0) / 45.0)
+
+## Mother's voice notes: limited, each one calms you (Dread -35 over 6 s).
+var voice_playing := false
+func play_voice_note() -> bool:
+	if voice_playing or busy:
+		return false
+	if not GameState.use_item("voice"):
+		hud.message("No voice notes.", 1.5)
+		return false
+	voice_playing = true
+	var used := int(GameState.unlocks.get("voice_played", 0))
+	GameState.unlocks["voice_played"] = used + 1
+	var sets: Array = JSON.parse_string(FileAccess.open("res://data/story/voice_notes.json", FileAccess.READ).get_as_text())
+	var lines: Array = sets[used % sets.size()]
+	var tw := create_tween()
+	tw.tween_method(func(v): Dread.reset(v), Dread.value, max(0.0, Dread.value - 35.0), 6.0)
+	for ln in lines:
+		hud.message(str(ln), 3.0)
+		await get_tree().create_timer(3.0, false).timeout
+	voice_playing = false
+	return true
 
 func in_safe_zone() -> bool:
 	for dy in diyas:
@@ -205,7 +233,12 @@ func _on_interact(t: Object) -> void:
 		if not on_item_taken(iid, t):
 			if not GameState.collectibles.has(iid):
 				GameState.collectibles.append(iid)
-			hud.message("Taken: " + str(t.get_meta("prompt", "")).trim_prefix("Take "), 2)
+			if iid.begins_with("voice_"):
+				GameState.add_item("voice")
+				hud.message("A cassette in Mummy's handwriting: \"for when you're scared\".\n[V] to play it.", 4)
+				GameState.save_game()
+			else:
+				hud.message("Taken: " + str(t.get_meta("prompt", "")).trim_prefix("Take "), 2)
 			t.queue_free()
 		return
 	if t.has_meta("stair_exit"):
@@ -234,12 +267,27 @@ func load_floor_data(n: int) -> void:
 	var path := "res://data/floor_rules/floor_%02d.json" % n
 	if FileAccess.file_exists(path):
 		rules = JSON.parse_string(FileAccess.open(path, FileAccess.READ).get_as_text())
+		inject_night_rule()
 	var npath := "res://data/notes/floor_%02d.json" % n
 	if FileAccess.file_exists(npath):
 		for nd in JSON.parse_string(FileAccess.open(npath, FileAccess.READ).get_as_text()):
 			notes[nd.id] = nd
 
+## Night Shift: every board carries one extra rule that is a lie.
+## The phone camera shows it struck through in red.
+func inject_night_rule() -> void:
+	if not GameState.night() or not rules.has("night_rule"):
+		return
+	for r in rules.rules:
+		if r.get("night", false):
+			return
+	rules.rules.append({"id": "night", "text": str(rules.night_rule), "class": "false", "night": true})
+
 func show_rules(extra := "") -> void:
+	if GameState.night() and player and player.phone_up:
+		for r in rules.get("rules", []):
+			if r.get("night", false):
+				extra += "\n\n(Through the camera, one line is struck through in red:  \"%s\")" % str(r.text)
 	var s := "RULES OF THE BUILDING\nREAD CAREFULLY.  THE BUILDING IS LISTENING.\n"
 	for r in rules.get("rules", []):
 		s += "\n•  " + str(r.text)
@@ -414,6 +462,8 @@ func _toggle_inventory() -> void:
 	s += "Chalk       %d      [C] mark a surface\n" % GameState.count("chalk")
 	s += "Diyas       %d      [G] place — a safe glow for %ds\n" % [GameState.count("diya"), DIYA_SECONDS]
 	s += "Old phone           [Q] camera — sees what eyes cannot\n"
+	if GameState.count("voice") > 0:
+		s += "Voice notes %d      [V] play — Mummy's voice calms you\n" % GameState.count("voice")
 	s += "\nNOTES FOUND\n"
 	var found := 0
 	for id in GameState.collectibles:

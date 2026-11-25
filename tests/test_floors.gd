@@ -57,6 +57,8 @@ func find_meta(n: Node, key: String, value = null) -> Node:
 func _initialize() -> void:
 	gs = root.get_node("GameState")
 	dread = root.get_node("Dread")
+	await process_frame   # let autoload _ready() (new_game) run first
+	await process_frame
 	var b_save := _bak("user://save.json"); var b_set := _bak("user://settings.json"); var b_unl := _bak("user://unlocks.json")
 	await t_ground()
 	await t_office()

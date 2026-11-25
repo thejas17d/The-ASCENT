@@ -15,6 +15,7 @@ const H := 3.0
 const ROOM213_SLOT := 6    # left side, slot 6 normally labelled 214
 
 var room213_open := false
+var light_scale := 1.0        # Night Shift / altered-floor dimming, applied every rebuild
 var figure: Node3D
 var knock_doors: Array = []   # StaticBody3D per door id (null for Room 213)
 var lights: Array = []        # OmniLight3D, for flicker events
@@ -139,7 +140,7 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 		_box(Vector3(0.3, 0.012, 1.1), Vector3(0, H - 0.066, z), Mat.emissive(col, 3.0), false)
 		var l := OmniLight3D.new()
 		l.light_color = col
-		l.light_energy = 1.15
+		l.light_energy = 1.15 * light_scale
 		l.omni_range = 7.0
 		l.omni_attenuation = 1.3
 		l.light_volumetric_fog_energy = 0.7
@@ -269,6 +270,10 @@ func _rule_board(pos: Vector3) -> void:
 	var l := _label(txt, pos + Vector3(0.037, 0, 0), -1, Color(0.08, 0.07, 0.06), 20)
 	l.shaded = true
 	l.width = 300; l.autowrap_mode = TextServer.AUTOWRAP_WORD
+	for r in _rules:
+		if r.get("night", false):
+			var lie := _label("✗  " + str(r.text) + "  — A LIE", pos + Vector3(0.045, -0.72, 0), -1, Color(1, 0.15, 0.1), 22)
+			lie.layers = 2
 
 ## Godrej-style steel almirah you can hide in.
 func _almirah(base: Vector3) -> void:

@@ -119,7 +119,45 @@ func _build() -> void:
 	# lights: warm household tubes and bulbs
 	for p in [Vector3(-3.0, 3.0, -0.5), Vector3(4.0, 3.0, -0.5), Vector3(-4.0, 3.0, -5.0), Vector3(3.0, 3.0, -5.0), Vector3(-1.5, 3.0, -9.5), Vector3(4.0, 3.0, -9.5)]:
 		kit.lamp(p, "tube", Color(1.0, 0.86, 0.62), 0.95, 6.5)
+	_clutter()
 	_build_mother()
+
+## A lived-in 1998 flat: frames, calendar, steel utensils, fan, rug, rangoli, curtains.
+func _clutter() -> void:
+	var steel := StandardMaterial3D.new()
+	steel.albedo_color = Color(0.75, 0.76, 0.78); steel.roughness = 0.25; steel.metallic = 0.8
+	for i in 4:   # framed photos on the living-room wall
+		var x := -6.4 + i * 0.75
+		var y := 1.85 + (i % 2) * 0.12
+		kit.box(Vector3(0.5, 0.4, 0.03), Vector3(x, y, -2.9), kit.m.trim, false)
+		kit.box(Vector3(0.42, 0.32, 0.01), Vector3(x, y, -2.88), Color(0.55, 0.5, 0.42).lerp(Color(0.3, 0.35, 0.4), i / 4.0), false)
+	kit.box(Vector3(0.45, 0.6, 0.01), Vector3(0.4, 1.6, -2.91), kit.m.paper, false)   # calendar
+	kit.label("JUNE\n1998", Vector3(0.4, 1.7, -2.9), 0.0, Color(0.6, 0.05, 0.05), 26)
+	kit.box(Vector3(2.6, 0.01, 1.8), Vector3(-4.0, 0.005, -0.6), Color(0.45, 0.12, 0.1), false)   # rug
+	kit.box(Vector3(2.2, 0.012, 1.4), Vector3(-4.0, 0.008, -0.6), Color(0.65, 0.45, 0.2), false)
+	for z in [-1.2, 0.2]:   # cushions
+		kit.box(Vector3(0.35, 0.3, 0.35), Vector3(-6.55, 0.6, z), Color(0.7, 0.5, 0.15), false)
+	var fan := Node3D.new(); fan.position = Vector3(-3.0, 2.6, -0.2); add_child(fan)   # ceiling fan
+	kit.cyl(0.1, 0.1, Vector3.ZERO, Color(0.4, 0.38, 0.33), fan)
+	for k in 3:
+		var b := kit.box(Vector3(0.8, 0.01, 0.12), Vector3(cos(k * TAU / 3) * 0.45, 0, sin(k * TAU / 3) * 0.45), Color(0.45, 0.42, 0.36), false, fan)
+		b.rotation.y = -k * TAU / 3
+	kit.cyl(0.012, 0.4, Vector3(-3.0, 2.8, -0.2), kit.m.black)
+	var tw := fan.create_tween().set_loops()
+	tw.tween_property(fan, "rotation:y", TAU, 2.5).from(0.0)
+	kit.box(Vector3(1.4, 0.04, 0.25), Vector3(2.5, 1.7, -6.85), kit.m.wood, false)   # utensil rack
+	for i in 6:
+		kit.cyl(0.07 + (i % 3) * 0.02, 0.05 + (i % 2) * 0.12, Vector3(1.95 + i * 0.22, 1.76 + (i % 2) * 0.06, -6.85), steel)
+	for i in 4:
+		kit.cyl(0.13, 0.02, Vector3(3.6 + i * 0.05, 1.1 + i * 0.01, -6.85), steel).rotation.x = PI / 2
+	for r in [0.45, 0.3, 0.15]:   # rangoli by the front door
+		var ring := TorusMesh.new(); ring.inner_radius = r - 0.02; ring.outer_radius = r
+		kit.mesh(ring, Vector3(4.0, 0.006, 0.3), Color(0.9, 0.88, 0.8))
+	kit.box(Vector3(0.05, 1.6, 0.8), Vector3(6.93, 1.6, -8.4), Color(0.25, 0.45, 0.4), false)   # curtains
+	kit.box(Vector3(0.05, 1.6, 0.8), Vector3(6.93, 1.6, -9.6), Color(0.25, 0.45, 0.4), false)
+	kit.box(Vector3(0.35, 0.42, 0.18), Vector3(3.0, 0.21, -8.0), Color(0.15, 0.25, 0.55))   # school bag
+	for x in [5.9, 6.2]:   # slippers
+		kit.box(Vector3(0.12, 0.03, 0.28), Vector3(x, 0.015, -9.2), Color(0.3, 0.2, 0.12), false)
 
 func _wall_x(z: float, x0: float, x1: float, gaps: Array) -> void:
 	var cursor := x0

@@ -97,6 +97,7 @@ func _build() -> void:
 		kit.lamp(p, "bulb", Color(1, 0.8, 0.5), 0.7, 5.0)
 	kit.board(Vector3(-3.0, 1.5, 11.86), PI, rules.rules)
 	kit.note("u_foreman", Vector3(2.0, 0.006, 9.5))
+	kit.item("voice_2", "cassette (voice note)", Vector3(13.2, 0.0, -3.6), "tape", Color(0.75, 0.2, 0.15))
 	for p in [Vector3(-14.3, 0, -3.0), Vector3(14.3, 0, 8.0), Vector3(-14.3, 0, 7.0)]:
 		kit.locker(p, -PI / 2 if p.x < 0 else PI / 2)
 	_make_rain()

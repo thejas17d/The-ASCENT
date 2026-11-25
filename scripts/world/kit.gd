@@ -159,6 +159,12 @@ func board(pos: Vector3, yaw: float, rules: Array, mirrored := false) -> Node3D:
 	l.width = 300; l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	if mirrored:
 		l.scale.x = -1.0
+	for r in rules:
+		if r.get("night", false):
+			var lie := label("✗  " + str(r.text) + "  — A LIE", Vector3(0, -0.72, 0.04), 0.0, Color(1, 0.15, 0.1), 22, false, b)
+			lie.layers = 2           # only the phone camera sees it
+			if mirrored:
+				lie.scale.x = -1.0
 	return b
 
 func chair(pos: Vector3, yaw: float) -> Node3D:

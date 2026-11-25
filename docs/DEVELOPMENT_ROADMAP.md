@@ -53,6 +53,15 @@
 - [ ] Art pass per floor (props, characters), more anomalies on altered floors
 See `docs/FLOOR_DESIGN.md`.
 
-## Phase 6 — story polish, Floor 9 content, New Game+, Night Shift (NEXT)
+## Phase 6 — replayability + story systems ✅
+- [x] Night Shift (darker, faster, a lie on every board revealed by the phone) + New Game+ bonuses and loop count
+- [x] Memories journal across runs (29 entries), voice notes that calm Dread (V)
+- [x] Daily Corridor (date-seeded, local best, leaderboard integration point)
+- [x] Hidden Floor 9 — The Blueprint (Supervisor's identity, sequel hook)
+- [x] Residence art pass (clutter), endings polish (loop count, credits)
+- [x] `tests/test_phase6.gd` — 31 checks
+See `docs/REPLAYABILITY.md`.
+
+## Phase 7 — Mobile (NEXT): touch controls, gyro, haptics, Android export
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

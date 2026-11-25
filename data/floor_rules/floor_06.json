@@ -1,6 +1,19 @@
-{"floor": 6, "title": "THE INVERSION", "rules": [
-  {"id": "i_follow", "text": "Follow your shadow.", "class": "incomplete",
-   "truth": "Your shadow repeats you three seconds late. Use it to hold the plates you can't reach."},
-  {"id": "i_notyours", "text": "Your shadow is not yours.", "class": "true",
-   "truth": "After the second door it stops copying you and comes for you. Trap it in the mirror room."}
-]}
+{
+  "floor": 6,
+  "title": "THE INVERSION",
+  "rules": [
+    {
+      "id": "i_follow",
+      "text": "Follow your shadow.",
+      "class": "incomplete",
+      "truth": "Your shadow repeats you three seconds late. Use it to hold the plates you can't reach."
+    },
+    {
+      "id": "i_notyours",
+      "text": "Your shadow is not yours.",
+      "class": "true",
+      "truth": "After the second door it stops copying you and comes for you. Trap it in the mirror room."
+    }
+  ],
+  "night_rule": "Mirrors lie."
+}

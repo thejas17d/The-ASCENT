@@ -7,6 +7,8 @@ const Settings := preload("res://scripts/ui/settings_panel.gd")
 const Corridor := preload("res://scripts/floors/corridor.gd")
 const POST := preload("res://shaders/post_fx.gdshader")
 const Sfx := preload("res://scripts/systems/sfx.gd")
+const Memories := preload("res://scripts/systems/memories.gd")
+const Leaderboard := preload("res://scripts/systems/leaderboard.gd")
 
 var _cam: Camera3D
 var _box: VBoxContainer
@@ -23,8 +25,8 @@ func _ready() -> void:
 	add_child(shade)
 	_box = VBoxContainer.new()
 	_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	_box.offset_left = 120; _box.offset_right = 520; _box.offset_top = -220; _box.offset_bottom = 220
-	_box.add_theme_constant_override("separation", 14)
+	_box.offset_left = 120; _box.offset_right = 560; _box.offset_top = -330; _box.offset_bottom = 330
+	_box.add_theme_constant_override("separation", 10)
 	add_child(_box)
 	var t := Label.new(); t.text = "THE ASCENT"
 	t.add_theme_font_size_override("font_size", 64)
@@ -42,6 +44,12 @@ func _ready() -> void:
 			cont.text = "Continue — Floor %d coming soon" % GameState.floor_num
 		GameState.new_game()   # loading was only a peek
 	_button("New Game", _new)
+	if GameState.unlocks.get("new_game_plus", false):
+		_button("New Game+  —  Night Shift", _new_night)
+	_button("Daily Corridor  (best today: %d)" % Leaderboard.best(Leaderboard.today()), _daily)
+	if GameState.unlocks.get("floor9", false):
+		_button("Floor 9", _floor9)
+	_button("Memories  (%d / %d)" % [Memories.found().size(), Memories.all().size()], _open_memories)
 	_button("Test: The Supervisor", func(): get_tree().change_scene_to_file("res://scenes/dev/supervisor_test.tscn"))
 	_button("Settings", _open_settings)
 	_button("Quit", func(): get_tree().quit())
@@ -84,7 +92,7 @@ func _process(d: float) -> void:
 	_cam.rotation.x = -0.03 + sin(_t * 0.11) * 0.02
 
 func _button(text: String, cb: Callable) -> Button:
-	var b := Button.new(); b.text = text; b.custom_minimum_size = Vector2(320, 48)
+	var b := Button.new(); b.text = text; b.custom_minimum_size = Vector2(360, 42)
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.pressed.connect(cb); _box.add_child(b)
 	return b
@@ -100,6 +108,66 @@ func _open_settings() -> void:
 func _continue() -> void:
 	if GameState.load_game() and GameState.floor_available(GameState.floor_num):
 		get_tree().change_scene_to_file(GameState.floor_scene())
+
+func _new_night() -> void:
+	GameState.new_game("night", true)
+	Dread.reset(0.0)
+	GameState.save_game()
+	get_tree().change_scene_to_file(GameState.floor_scene())
+
+func _daily() -> void:
+	GameState.new_game("daily")
+	Dread.reset(0.0)
+	get_tree().change_scene_to_file(GameState.FLOOR_SCENES[2])
+
+func _floor9() -> void:
+	GameState.new_game("floor9")
+	Dread.reset(0.0)
+	get_tree().change_scene_to_file(GameState.FLOOR_SCENES[9])
+
+## Journal of everything found across all runs.
+func _open_memories() -> void:
+	_box.visible = false
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 120; panel.offset_right = -120; panel.offset_top = 80; panel.offset_bottom = -80
+	add_child(panel)
+	var v := VBoxContainer.new(); panel.add_child(v)
+	var head := Label.new()
+	head.text = "MEMORIES   —   %d of %d found" % [Memories.found().size(), Memories.all().size()]
+	head.add_theme_font_size_override("font_size", 28)
+	v.add_child(head)
+	var h := HBoxContainer.new(); h.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	h.add_theme_constant_override("separation", 24)
+	v.add_child(h)
+	var scroll := ScrollContainer.new(); scroll.custom_minimum_size.x = 420
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	h.add_child(scroll)
+	var list := VBoxContainer.new(); list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	var text := Label.new(); text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.text = "Choose a memory."
+	h.add_child(text)
+	var found_ids: Array = GameState.unlocks.get("memories", [])
+	for m in Memories.all():
+		var b := Button.new()
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var label := "G" if int(m.floor) == 0 else str(m.floor)
+		if found_ids.has(m.id):
+			b.text = "%s · %s" % [label, m.title]
+			b.pressed.connect(func(): text.text = "%s
+
+%s" % [str(m.title).to_upper(), m.text])
+		else:
+			b.text = "%s · ???" % label
+			b.disabled = true
+		list.add_child(b)
+	var back := Button.new(); back.text = "Back"
+	back.pressed.connect(func():
+		panel.queue_free()
+		_box.visible = true)
+	v.add_child(back)
 
 func _new() -> void:
 	GameState.new_game()

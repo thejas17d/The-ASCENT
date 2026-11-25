@@ -68,6 +68,7 @@ func _build() -> void:
 		kit.item("r_page_%d" % i, "torn page", page_spots[i], "page", Color(0.85, 0.8, 0.68))
 	kit.board(Vector3(-3.0, 1.6, 15.88), PI, rules.rules)
 	kit.note("r_archivist", Vector3(1.2, 0.006, 13.5))
+	kit.item("voice_1", "cassette (voice note)", Vector3(7.3, 0.79, -14.5), "tape", Color(0.75, 0.2, 0.15))
 	kit.stair_exit(Vector3(0, 0, -16.03), 0.0, "STAIRS ▲  4")
 	exit_hint = "Locked. The report isn't whole yet."
 	for p in [Vector3(0, 3.2, 12), Vector3(-6, 3.2, 3), Vector3(6, 3.2, -5), Vector3(0, 3.2, -13), Vector3(-6, 3.2, -9), Vector3(6, 3.2, 7)]:
@@ -178,6 +179,8 @@ func on_item_taken(id: String, node: Node3D) -> bool:
 		hud.message("A torn page of a typed report. (%d / %d)" % [pages, PAGES], 3)
 	else:
 		hud.show_panel("MERIDIAN TOWER — STRUCTURAL INSPECTION, 11 JUNE 1998\n\nFindings: hairline cracking in columns C4–C9, floors 4 to 7.\nRecommendation: HALT ALL SLAB POURS ABOVE FLOOR 4 UNTIL THE COLUMNS ARE TESTED.\n\n(The recommendation has been struck through in red ink. Beneath it:)\n\nNO DEFECTS FOUND.  FIT FOR CONTINUED CONSTRUCTION.\n\nSigned:  P. DESAI, Site Engineer\nCountersigned:  (illegible), Site Supervisor\n\n[E] close")
+		if not GameState.collectibles.has("r_report"):
+			GameState.collectibles.append("r_report")
 		unlock_exit("")
 		GameState.save_game()
 	return true

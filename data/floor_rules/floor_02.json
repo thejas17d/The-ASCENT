@@ -3,13 +3,26 @@
   "title": "THE CORRIDOR",
   "required_streak": 8,
   "rules": [
-    {"id": "f2_walk", "text": "Walk. Do not run.", "class": "incomplete",
-     "truth": "Running is only punished while knocking can be heard.",
-     "clue": "Scuffed footprints stop dead in front of the knocking doors."},
-    {"id": "f2_knock", "text": "If you hear knocking, do not knock back.", "class": "true",
-     "truth": "Interacting with a knocking door is a violation."},
-    {"id": "f2_213", "text": "Room 213 does not exist.", "class": "false",
-     "truth": "Room 213 appears after 8 correct judgements and is the only way out.",
-     "clue": "Chalk on the end wall: '213 IS REAL' appears once the tally reaches 4."}
-  ]
+    {
+      "id": "f2_walk",
+      "text": "Walk. Do not run.",
+      "class": "incomplete",
+      "truth": "Running is only punished while knocking can be heard.",
+      "clue": "Scuffed footprints stop dead in front of the knocking doors."
+    },
+    {
+      "id": "f2_knock",
+      "text": "If you hear knocking, do not knock back.",
+      "class": "true",
+      "truth": "Interacting with a knocking door is a violation."
+    },
+    {
+      "id": "f2_213",
+      "text": "Room 213 does not exist.",
+      "class": "false",
+      "truth": "Room 213 appears after 8 correct judgements and is the only way out.",
+      "clue": "Chalk on the end wall: '213 IS REAL' appears once the tally reaches 4."
+    }
+  ],
+  "night_rule": "Count the doors. There are 21."
 }
