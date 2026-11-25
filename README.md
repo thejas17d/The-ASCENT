@@ -3,7 +3,7 @@ First-person paranormal survival horror (Godot 4.4, GDScript, Mobile renderer).
 Climb Meridian Tower, Mumbai — every floor has rules, and some of them lie.
 
 ## Run
-- Double-click `play.cmd`, or: `~/.godot/Godot_v4.4.1-stable_win64.exe --path .`
+- Double-click `play.cmd`, or in cmd: `"%USERPROFILE%.godotGodot_v4.4.1-stable_win64.exe" --path .`
 - Edit: open the folder in the Godot 4.4.1 editor (`~/.godot/Godot_v4.4.1-stable_win64.exe -e --path .`).
 - Tests: `~/.godot/Godot_v4.4.1-stable_win64_console.exe --headless --path . -s res://tests/test_floor2.gd`
 
