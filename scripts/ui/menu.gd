@@ -1,42 +1,107 @@
 extends Control
-## Title screen: Continue / New Game / Quit.
+## Title screen: a slow camera drift down the corridor behind the menu.
+## Continue / New Game / Settings / Quit.
+
+const UiTheme := preload("res://scripts/ui/ui_theme.gd")
+const Settings := preload("res://scripts/ui/settings_panel.gd")
+const Corridor := preload("res://scripts/floors/corridor.gd")
+const POST := preload("res://shaders/post_fx.gdshader")
+const Sfx := preload("res://scripts/systems/sfx.gd")
+
+var _cam: Camera3D
+var _box: VBoxContainer
+var _settings: Control
+var _t := 0.0
 
 func _ready() -> void:
+	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var bg := ColorRect.new(); bg.color = Color(0.02, 0.02, 0.02)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT); add_child(bg)
-	var box := VBoxContainer.new()
-	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	box.offset_left = -200; box.offset_right = 200; box.offset_top = -170; box.offset_bottom = 170
-	box.add_theme_constant_override("separation", 14)
-	add_child(box)
+	theme = UiTheme.get_theme()
+	_build_backdrop()
+	var shade := ColorRect.new(); shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0, 0, 0, 0.35); shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(shade)
+	_box = VBoxContainer.new()
+	_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	_box.offset_left = 120; _box.offset_right = 520; _box.offset_top = -220; _box.offset_bottom = 220
+	_box.add_theme_constant_override("separation", 14)
+	add_child(_box)
 	var t := Label.new(); t.text = "THE ASCENT"
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	t.add_theme_font_size_override("font_size", 56)
-	t.add_theme_color_override("font_color", Color(0.8, 0.75, 0.6))
-	box.add_child(t)
-	var sub := Label.new(); sub.text = "Meridian Tower · Mumbai · 3:33 AM"
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	box.add_child(sub)
+	t.add_theme_font_size_override("font_size", 64)
+	t.add_theme_color_override("font_color", Color(0.85, 0.8, 0.68))
+	_box.add_child(t)
+	var sub := Label.new(); sub.text = "Meridian Tower  ·  Mumbai  ·  3:33 AM"
+	sub.add_theme_color_override("font_color", UiTheme.DIM)
+	_box.add_child(sub)
+	_box.add_child(Control.new())
 	if GameState.has_save():
-		_button(box, "Continue", _continue)
-	_button(box, "New Game", _new)
-	_button(box, "Quit", func(): get_tree().quit())
+		var ok := GameState.load_game()
+		var cont := _button("Continue", _continue)
+		if not ok or not GameState.floor_available(GameState.floor_num):
+			cont.disabled = true
+			cont.text = "Continue — Floor %d coming soon" % GameState.floor_num
+		GameState.new_game()   # loading was only a peek
+	_button("New Game", _new)
+	_button("Settings", _open_settings)
+	_button("Quit", func(): get_tree().quit())
 	var hint := Label.new(); hint.text = "Headphones recommended."
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
-	box.add_child(hint)
+	hint.add_theme_color_override("font_color", UiTheme.DIM)
+	hint.add_theme_font_size_override("font_size", 15)
+	_box.add_child(hint)
+	(_box.get_child(3) as Button).call_deferred("grab_focus")
 
-func _button(parent: Node, text: String, cb: Callable) -> void:
-	var b := Button.new(); b.text = text; b.custom_minimum_size.y = 44
-	b.pressed.connect(cb); parent.add_child(b)
+func _build_backdrop() -> void:
+	var world := Node3D.new(); add_child(world)
+	var we := WorldEnvironment.new(); we.environment = Graphics.make_environment()
+	world.add_child(we)
+	var c := Corridor.new(); world.add_child(c)
+	c.build("", 0, false, 1)
+	_cam = Camera3D.new(); _cam.fov = 60
+	world.add_child(_cam)
+	_cam.position = Vector3(0.25, 1.5, 1.5)
+	_cam.make_current()
+	var torch := SpotLight3D.new()
+	torch.spot_range = 18; torch.spot_angle = 24; torch.light_energy = 2.2
+	torch.light_volumetric_fog_energy = 2.0; torch.shadow_enabled = true
+	_cam.add_child(torch)
+	var fx := ColorRect.new(); fx.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := ShaderMaterial.new(); m.shader = POST
+	m.set_shader_parameter("dread", 0.15); m.set_shader_parameter("aberration", 2.0)
+	m.set_shader_parameter("grain", 0.05 * float(GameState.settings.get("grain", 1.0)))
+	fx.material = m
+	add_child(fx)
+	var hum := AudioStreamPlayer.new(); hum.stream = Sfx.get_stream("hum")
+	hum.bus = "Ambience"; hum.volume_db = -14; hum.autoplay = true
+	add_child(hum)
+
+func _process(d: float) -> void:
+	_t += d
+	# slow dolly that loops before the corridor's end
+	_cam.position.z = 1.5 - fmod(_t * 0.6, 34.0)
+	_cam.rotation.y = sin(_t * 0.15) * 0.06
+	_cam.rotation.x = -0.03 + sin(_t * 0.11) * 0.02
+
+func _button(text: String, cb: Callable) -> Button:
+	var b := Button.new(); b.text = text; b.custom_minimum_size = Vector2(320, 48)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.pressed.connect(cb); _box.add_child(b)
+	return b
+
+func _open_settings() -> void:
+	_box.visible = false
+	_settings = Settings.new()
+	_settings.closed.connect(func():
+		_settings.queue_free(); _settings = null
+		_box.visible = true)
+	add_child(_settings)
 
 func _continue() -> void:
-	if GameState.load_game():
+	if GameState.load_game() and GameState.floor_available(GameState.floor_num):
 		get_tree().change_scene_to_file(GameState.floor_scene())
 
 func _new() -> void:
 	GameState.new_game()
 	Dread.reset(0.0)
+	GameState.save_game()
 	get_tree().change_scene_to_file(GameState.floor_scene())

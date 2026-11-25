@@ -1,0 +1,8 @@
+[
+  {"id": "f2_runner", "title": "Torn diary page", "min_streak": 0,
+   "text": "Day ? — I ran the whole corridor the first time. Nothing happened. I thought the sign was a joke.\n\nThe second time something was knocking behind a door when I ran.\nI woke up at the start again. The chalk marks were gone.\n\nWalk when it knocks. Run when it doesn't. — R.S., Room 209"},
+  {"id": "f2_vanish", "title": "Note in a child's handwriting", "min_streak": 1,
+   "text": "Some things blink at you out of the corner of your eye and are gone.\nThose are the building lying. Ignore them.\n\nThe things that STAY are the building changing.\nTurn back for those."},
+  {"id": "f2_camera", "title": "Back of a hotel receipt", "min_streak": 2,
+   "text": "Meridian Guest House — Room 2__\n\nThe numbers on the walls are not all the numbers.\nMy phone saw one the walls don't show. Left side. Past the painting of the river."}
+]

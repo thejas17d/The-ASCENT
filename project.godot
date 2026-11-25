@@ -1,18 +1,35 @@
 config_version=5
 
 [application]
+
 config/name="The Ascent"
 run/main_scene="res://scenes/menu.tscn"
-config/features=PackedStringArray("4.4", "Mobile")
-
-[display]
-window/size/viewport_width=1280
-window/size/viewport_height=720
-
-[rendering]
-renderer/rendering_method="mobile"
+config/features=PackedStringArray("4.4", "Forward Plus")
 
 [autoload]
 
-GameState="*res://scripts/autoload/game_state.gd"
+Graphics="*res://scripts/autoload/graphics.gd"
 Dread="*res://scripts/autoload/dread.gd"
+GameState="*res://scripts/autoload/game_state.gd"
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/stretch/mode="disabled"
+window/dpi/allow_hidpi=true
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+textures/default_filters/anisotropic_filtering_level=4
+anti_aliasing/quality/use_debanding=true
+lights_and_shadows/positional_shadow/atlas_size=4096
+environment/volumetric_fog/volume_size=96
+environment/volumetric_fog/volume_depth=96

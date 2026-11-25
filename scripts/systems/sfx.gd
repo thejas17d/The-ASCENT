@@ -2,6 +2,26 @@ extends RefCounted
 ## Procedural placeholder audio (no external assets). Replace with licensed
 ## recordings later — see ASSET_LICENCES.md.
 const RATE := 22050
+static var _cache := {}
+
+## Cached access: get("knock") builds once per run, so floors load without a hitch.
+static func get_stream(id: String) -> AudioStreamWAV:
+	if not _cache.has(id):
+		match id:
+			"knock": _cache[id] = knock()
+			"hum": _cache[id] = hum()
+			"sting": _cache[id] = sting()
+			"footsteps": _cache[id] = footsteps()
+			"slam": _cache[id] = slam()
+			"whisper": _cache[id] = whisper()
+			"ring": _cache[id] = ring()
+			"gasp": _cache[id] = gasp()
+			"step_carpet": _cache[id] = step(0.35, 70.0, 0.06)
+			"step_tile": _cache[id] = step(0.7, 180.0, 0.03)
+			"step_concrete": _cache[id] = step(0.6, 120.0, 0.04)
+			"heartbeat": _cache[id] = heartbeat()
+			"click": _cache[id] = click()
+	return _cache[id]
 
 static func _wav(samples: PackedFloat32Array, loop := false) -> AudioStreamWAV:
 	var bytes := PackedByteArray(); bytes.resize(samples.size() * 2)
@@ -88,4 +108,34 @@ static func gasp() -> AudioStreamWAV:
 		var t := float(i) / RATE
 		lp = lp * 0.5 + randf_range(-1, 1) * 0.5
 		s[i] = lp * sin(PI * t / 0.6) * 0.8
+	return _wav(s)
+
+## One footfall. bright 0..1 = how much high-frequency scuff; body = thump pitch.
+static func step(bright: float, body: float, length: float) -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * (length + 0.12)))
+	var lp := 0.0
+	for i in s.size():
+		var t := float(i) / RATE
+		lp = lp * (1.0 - bright * 0.8) + randf_range(-1, 1) * bright * 0.8
+		var scuff := lp * exp(-t * 28.0) * 0.5
+		var thump := sin(TAU * body * t) * exp(-t * 45.0) * 0.6
+		s[i] = scuff + thump
+	return _wav(s)
+
+## Lub-dub.
+static func heartbeat() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 0.7))
+	for start in [0.0, 0.22]:
+		var o := int(start * RATE)
+		for i in int(RATE * 0.16):
+			var t := float(i) / RATE
+			s[o + i] += sin(TAU * (48.0 - t * 60.0) * t) * exp(-t * 22.0) * (0.9 if start == 0.0 else 0.6)
+	return _wav(s)
+
+## Torch switch.
+static func click() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 0.05))
+	for i in s.size():
+		var t := float(i) / RATE
+		s[i] = randf_range(-1, 1) * exp(-t * 300.0) * 0.6 + sin(TAU * 2400.0 * t) * exp(-t * 400.0) * 0.3
 	return _wav(s)

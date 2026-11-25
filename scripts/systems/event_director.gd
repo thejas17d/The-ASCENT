@@ -8,7 +8,7 @@ extends Node
 var floor: Node          # FloorBase; must implement perform_event(id) -> bool
 var events: Array = []
 var enabled := true
-var log: Array = []      # ids performed, for tests/debug
+var history: Array = []  # ids performed, for tests/debug
 var _cool := {}
 var _next := 15.0        # seconds of quiet before first event
 var _rng := RandomNumberGenerator.new()
@@ -51,7 +51,7 @@ func fire() -> String:
 		return ""
 	_cool[pick.id] = float(pick.cooldown)
 	Dread.add(float(pick.dread))
-	log.append(pick.id)
+	history.append(pick.id)
 	# relief after big moments, silence is a tool
 	_next = _rng.randf_range(18.0, 32.0) + (15.0 if int(pick.intensity) >= 3 else 0.0)
 	return pick.id
