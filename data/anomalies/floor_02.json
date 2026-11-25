@@ -1,0 +1,14 @@
+[
+  {"id": "painting_color", "desc": "A painting has changed colour", "dread": 4},
+  {"id": "door_number", "desc": "A door number is wrong", "dread": 3},
+  {"id": "light_missing", "desc": "A ceiling light is gone", "dread": 4},
+  {"id": "light_red", "desc": "A ceiling light burns red", "dread": 6},
+  {"id": "chair_moved", "desc": "The chair faces you in the middle of the corridor", "dread": 8},
+  {"id": "extra_phone", "desc": "A telephone sits on the floor", "dread": 5},
+  {"id": "door_ajar", "desc": "A door is slightly open", "dread": 6},
+  {"id": "vase_missing", "desc": "The vase is gone", "dread": 3},
+  {"id": "extinguisher_missing", "desc": "The fire extinguisher is gone", "dread": 3},
+  {"id": "figure", "desc": "Someone stands at the end of the corridor", "dread": 15},
+  {"id": "ceiling_low", "desc": "The ceiling sags in the middle", "dread": 8},
+  {"id": "stains", "desc": "Dark handprints on the wall", "dread": 10}
+]
