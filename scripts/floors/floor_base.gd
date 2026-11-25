@@ -17,6 +17,8 @@ const Hud := preload("res://scripts/ui/hud.gd")
 const Pause := preload("res://scripts/ui/pause_menu.gd")
 const Sfx := preload("res://scripts/systems/sfx.gd")
 const Director := preload("res://scripts/systems/event_director.gd")
+const Touch := preload("res://scripts/ui/touch_controls.gd")
+const Haptics := preload("res://scripts/systems/haptics.gd")
 const DIYA_SECONDS := 40.0
 const DIYA_RADIUS := 3.0
 
@@ -35,6 +37,7 @@ var _step_i := 0
 var _heart: AudioStreamPlayer
 var _heart_t := 0.0
 var _dust: GPUParticles3D
+var touch: CanvasLayer
 var floor_index := -1             # set by each floor before setup_common()
 var rules: Dictionary = {}
 var exit_unlocked := false
@@ -56,6 +59,10 @@ func setup_common() -> void:
 	player.reloaded.connect(func(ok): hud.message("Battery replaced." if ok else "No spare batteries.", 2))
 	hud = Hud.new(); add_child(hud)
 	pause_menu = Pause.new(); add_child(pause_menu)
+	if GameState.touch_active():
+		touch = Touch.new(); touch.player = player
+		add_child(touch)
+		player.touch_mode = true
 	director = Director.new(); director.floor = self; add_child(director)
 	Dread.breakdown.connect(_on_breakdown)
 	for k in ["knock", "footsteps", "slam", "whisper", "ring", "splash", "clang"]:
@@ -148,7 +155,13 @@ func _process(d: float) -> void:
 	if finished:
 		return
 	player.ui_lock = hud.dialog_open() or pause_menu.is_open()
-	hud.set_prompt("" if player.ui_lock else player.prompt())
+	var pr := "" if player.ui_lock else player.prompt()
+	if touch and pr != "":
+		pr = pr.replace("[E]", "USE ·").replace("[Space]", "HOLD BREATH")
+	hud.set_prompt(pr)
+	if touch:
+		touch.visible = not (pause_menu.is_open() or hud.dialog_open() or finished)
+		touch.buttons.breath.visible = player.hiding
 	hud.set_phone(player.phone_up)
 	hud.set_hiding(player.hiding)
 	hud.set_breath(player.breath, player.hiding)
@@ -174,6 +187,8 @@ func _process(d: float) -> void:
 	if Dread.value > 55.0 and _heart_t <= 0.0:
 		_heart.volume_db = linear_to_db(clamp((Dread.value - 50.0) / 50.0, 0.05, 1.0))
 		_heart.play()
+		if Dread.value > 70.0:
+			Haptics.pulse("heartbeat", 50, clamp((Dread.value - 60.0) / 40.0, 0.2, 0.8))
 		_heart_t = lerp(1.1, 0.5, (Dread.value - 55.0) / 45.0)
 
 ## Mother's voice notes: limited, each one calms you (Dread -35 over 6 s).
@@ -341,6 +356,7 @@ func fall_down(reason: String) -> void:
 	player.input_enabled = false
 	_sfx.sting.play()
 	hud.glitch(1.6)
+	Haptics.pulse("fall", 400, 1.0)
 	await hud.fade_to(1.0, 0.25)
 	hud.message(reason + "\nThe floor gives way beneath you.", 4)
 	GameState.falls += 1
@@ -362,6 +378,7 @@ func die(reason: String) -> void:
 	player.input_enabled = false
 	_sfx.sting.play()
 	hud.glitch(2.0)
+	Haptics.pulse("death", 600, 1.0)
 	await hud.fade_to(1.0, 0.2)
 	hud.message(reason + "\n\nYOU DIED", 4)
 	GameState.deaths += 1
@@ -442,6 +459,7 @@ func _on_diya(pos: Vector3) -> void:
 
 func _on_gasp() -> void:
 	_sfx.gasp.play()
+	Haptics.pulse("gasp", 120, 0.7)
 	Dread.add(5)
 	hud.message("You gasp for air.", 2)
 

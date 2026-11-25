@@ -5,6 +5,7 @@ config_version=5
 config/name="The Ascent"
 run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.png"
 
 [autoload]
 
@@ -16,7 +17,9 @@ GameState="*res://scripts/autoload/game_state.gd"
 
 window/size/viewport_width=1600
 window/size/viewport_height=900
-window/stretch/mode="disabled"
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
 window/dpi/allow_hidpi=true
 
 [physics]

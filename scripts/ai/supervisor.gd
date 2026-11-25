@@ -366,6 +366,7 @@ func _set_state(s: int) -> void:
 		awareness = min(awareness, float(cfg.suspicious_at) * 0.8)
 	if s == S.CHASE and prev != S.CHASE:
 		Dread.add(12)
+		preload("res://scripts/systems/haptics.gd").pulse("chase", 220, 1.0)
 	state_changed.emit(NAMES[s])
 
 # ---------------------------------------------------------------- behaviours

@@ -27,6 +27,10 @@ const DEFAULT_SETTINGS := {
 	"reduced_flashing": false,
 	"subtitles": true,
 	"vol_master": 1.0, "vol_sfx": 1.0, "vol_ambience": 1.0,
+	"touch_controls": 0,        # 0 auto (phones), 1 always, 2 never
+	"touch_sensitivity": 1.0,
+	"gyro": false,              # tilt the phone to look
+	"haptics": true,
 }
 
 var floor_num := 2
@@ -81,6 +85,13 @@ func floor_available(n: int) -> bool:
 	return FLOOR_SCENES.has(n)
 
 ## Night Shift, Daily and Floor 9 helpers -------------------------------
+## On-screen touch controls: automatic on phones, forceable in Settings.
+func touch_active() -> bool:
+	match int(settings.get("touch_controls", 0)):
+		1: return true
+		2: return false
+	return OS.has_feature("mobile")
+
 func night() -> bool:
 	return mode == "night"
 

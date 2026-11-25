@@ -4,8 +4,16 @@ extends RefCounted
 ## boxes tile seamlessly with no UV work. Falls back to flat colour if a
 ## texture set is missing so the game never breaks on a missing asset.
 
-const TEX := "res://assets/textures/%s/%s.jpg"
+const TEX_2K := "res://assets/textures/%s/%s.jpg"
+const TEX_1K := "res://assets/textures_1k/%s/%s.jpg"   # phones and the Low preset
 static var _cache := {}
+
+## 1K textures on phones (memory, download size) and on the Low preset.
+static func tex_pattern() -> String:
+	var small: bool = OS.has_feature("mobile") or Graphics.quality == 0
+	if small and ResourceLoader.exists(TEX_1K % ["plywood", "albedo"]):
+		return TEX_1K
+	return TEX_2K
 
 ## tile_m: metres covered by one texture repeat.
 static func pbr(id: String, tile_m := 2.0, tint := Color.WHITE, rough := 1.0, metal := 0.0) -> StandardMaterial3D:
@@ -16,6 +24,7 @@ static func pbr(id: String, tile_m := 2.0, tint := Color.WHITE, rough := 1.0, me
 	m.albedo_color = tint
 	m.roughness = rough
 	m.metallic = metal
+	var TEX := tex_pattern()
 	if ResourceLoader.exists(TEX % [id, "albedo"]):
 		m.albedo_texture = load(TEX % [id, "albedo"])
 		m.normal_enabled = true

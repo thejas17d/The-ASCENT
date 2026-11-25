@@ -266,6 +266,7 @@ func _update_knocking(d: float) -> void:
 		_knock_next -= d
 		if _knock_next <= 0 and is_instance_valid(_knock_door):
 			play_at("knock", _knock_door.global_position)
+			Haptics.pulse("knock", 35, 0.4)
 			_knock_next = 1.3
 		# Rule 1 is incomplete: running is only punished while it knocks
 		# (after a short grace so the player can hear it and stop).

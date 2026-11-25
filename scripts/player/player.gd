@@ -44,6 +44,7 @@ var _burst := 0.0               # temporary loud noise (gasp, knocking things ov
 var _burst_t := 0.0
 var _pre_hide: Transform3D
 var _flicker := 0.0
+var touch_mode := false         # touch controls drive look; mouse-motion (emulated from touch) is ignored
 
 func _ready() -> void:
 	collision_mask = 1 | 4   # world + the Supervisor (layer 4)
@@ -94,7 +95,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if not _can_act():
 		return
-	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not touch_mode:
 		var s: float = SENS * GameState.settings.get("sensitivity", 1.0)
 		rotate_y(-e.relative.x * s)
 		_pitch = clamp(_pitch - e.relative.y * s, -1.3, 1.3)
@@ -116,6 +117,14 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func _can_act() -> bool:
 	return input_enabled and not ui_lock
+
+## Look by an angle delta (radians): used by touch drag and the gyroscope.
+func look_input(rel: Vector2) -> void:
+	if not _can_act() or hiding:
+		return
+	rotate_y(-rel.x)
+	_pitch = clamp(_pitch - rel.y, -1.3, 1.3)
+	cam.rotation.x = _pitch
 
 func reload() -> bool:
 	var ok := battery < 100.0 and GameState.use_item("battery")
@@ -184,6 +193,12 @@ func _physics_process(d: float) -> void:
 		return
 	if not is_on_floor():
 		velocity.y -= 9.8 * d
+	# gyroscope look (values are in screen space on Android; untested on hardware)
+	if touch_mode and GameState.settings.get("gyro", false) and _can_act():
+		var g := Input.get_gyroscope()
+		rotate_y(g.y * d)
+		_pitch = clamp(_pitch + g.x * d, -1.3, 1.3)
+		cam.rotation.x = _pitch
 	var v := Vector2.ZERO
 	if _can_act():
 		v = Input.get_vector("move_left", "move_right", "move_forward", "move_back")

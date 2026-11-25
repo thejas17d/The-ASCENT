@@ -192,6 +192,7 @@ func ask_code(title: String, length := 4) -> String:
 	edit.placeholder_text = "_ ".repeat(length).strip_edges()
 	edit.add_theme_font_size_override("font_size", 34)
 	edit.custom_minimum_size = Vector2(260, 56)
+	edit.virtual_keyboard_enabled = not GameState.touch_active()   # the keypad buttons are enough
 	v.add_child(edit)
 	var grid := GridContainer.new(); grid.columns = 3
 	v.add_child(grid)

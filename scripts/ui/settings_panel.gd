@@ -11,9 +11,14 @@ func _ready() -> void:
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	grow_vertical = Control.GROW_DIRECTION_BOTH
 	custom_minimum_size = Vector2(640, 0)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(620, min(760.0, get_viewport().get_visible_rect().size.y - 120.0))
+	add_child(scroll)
 	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 6)
-	add_child(box)
+	scroll.add_child(box)
 	var title := Label.new(); title.text = "SETTINGS"
 	title.add_theme_font_size_override("font_size", 30)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -34,6 +39,17 @@ func _ready() -> void:
 
 	_section(box, "Controls")
 	_slider(box, "Mouse sensitivity", "sensitivity", 0.3, 2.5)
+
+	_section(box, "Mobile")
+	var t := OptionButton.new()
+	for o in ["Auto (phones)", "Always", "Never"]:
+		t.add_item(o)
+	t.selected = int(s.get("touch_controls", 0))
+	t.item_selected.connect(func(i): _apply("touch_controls", i))
+	_row(box, "Touch controls", t)
+	_slider(box, "Touch look sensitivity", "touch_sensitivity", 0.3, 2.5)
+	_check(box, "Gyroscope look", "gyro")
+	_check(box, "Vibration", "haptics")
 
 	_section(box, "Horror & accessibility")
 	_slider(box, "Scare intensity", "scare_intensity", 0.5, 1.5)

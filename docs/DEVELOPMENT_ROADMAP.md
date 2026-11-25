@@ -62,6 +62,17 @@ See `docs/FLOOR_DESIGN.md`.
 - [x] `tests/test_phase6.gd` — 31 checks
 See `docs/REPLAYABILITY.md`.
 
-## Phase 7 — Mobile (NEXT): touch controls, gyro, haptics, Android export
+## Phase 7 — Mobile ✅ (APK builds; not yet run on a real phone)
+- [x] Touch controls: floating joystick (edge = run), drag-to-look, multi-touch buttons on the real input actions, crouch toggle, contextual HOLD BREATH
+- [x] Gyroscope look (optional; axes unverified on hardware), vibration on key moments, Mobile settings section
+- [x] UI scales with resolution (canvas_items) — phones and 4K
+- [x] 1K texture set for phones / Low preset; Mobile renderer verified on desktop
+- [x] Android export: preset, templates, SDK/JDK/keystore wiring, app icon; `build_android.cmd` builds + installs (APK ≈ 86 MB)
+- [x] `.import` files are now committed (texture compression settings were being lost)
+- [x] `tests/test_mobile.gd` — 28 checks
+- [ ] Run on a real phone: 60 fps target, gyro axes, haptics, button reach
+See `docs/MOBILE_BUILD.md`.
+
+## Phase 8 — QA & release readiness (NEXT)
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

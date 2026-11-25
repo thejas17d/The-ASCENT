@@ -5,9 +5,10 @@ Climb Meridian Tower, Mumbai — every floor has rules, and some of them lie.
 ## Run
 - Double-click `play.cmd`, or in cmd: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64.exe" --path .`
 - Edit: open the folder in the Godot 4.4.1 editor (`~/.godot/Godot_v4.4.1-stable_win64.exe -e --path .`).
-- Tests: see `docs/TESTING.md` (68 + 23 + 85 + 31 = 207 headless checks)
+- Tests: see `docs/TESTING.md` (68 + 23 + 85 + 31 + 28 = 235 headless checks)
+- **Android**: plug in a phone with USB debugging and double-click `build_android.cmd` (see `docs/MOBILE_BUILD.md`)
 
-## Controls (desktop)
+## Controls (desktop — phones get on-screen touch controls automatically)
 WASD move · Mouse look · Shift run · Ctrl crouch · E interact · F flashlight · R battery · C chalk · G diya · Q phone camera · V voice note · Space hold breath (hiding) · Tab inventory · Esc pause · F11 fullscreen
 
 ## Current state
