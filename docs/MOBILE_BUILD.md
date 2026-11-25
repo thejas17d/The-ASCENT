@@ -21,7 +21,7 @@ Or copy `build/TheAscent-phone.apk` to the phone and open it (allow "install unk
 Manual build: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64_console.exe" --headless --path . --export-debug "Android" build/TheAscent.apk`
 
 ## Export preset
-- Package `com.meridian.theascent`, version 0.7.0 (code 1), signed with the debug key.
+- Package `com.meridian.theascent`, version 0.8.0 (code 2), signed with the debug key. Presets: "Android Phone" (arm64, 59 MB — used by build_android.cmd) and "Android" (+x86_64 for emulators, 86 MB).
 - Architectures: **arm64-v8a** (phones) + **x86_64** (emulators). For a store/release build drop x86_64 (−80 MB).
 - Landscape (sensor), immersive full-screen, **VIBRATE** permission.
 - Exports `*.json` data (non-resource files) and **excludes the 2K textures** — phones use the 1K set (`assets/textures_1k/`, 21 MB of JPGs, ETC2/ASTC-compressed on import). APK ≈ 86 MB (target was < 300 MB).
