@@ -173,6 +173,9 @@ func _judge(correct: bool, what: String) -> void:
 func violate(reason: String) -> void:
 	if busy:
 		return
+	if daily:
+		end_daily(reason)
+		return
 	streak = 0
 	_checkpoint()
 	Dread.add(30)

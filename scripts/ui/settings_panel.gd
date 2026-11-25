@@ -65,6 +65,10 @@ func _ready() -> void:
 	hint.add_theme_color_override("font_color", UiTheme.DIM)
 	hint.add_theme_font_size_override("font_size", 15)
 	box.add_child(hint)
+	if not OS.has_feature("mobile"):
+		var logs := Button.new(); logs.text = "Open log folder (for bug reports)"
+		logs.pressed.connect(func(): OS.shell_open(ProjectSettings.globalize_path("user://logs")))
+		box.add_child(logs)
 	var back := Button.new(); back.text = "Back"
 	back.pressed.connect(func(): closed.emit())
 	box.add_child(back)

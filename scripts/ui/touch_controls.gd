@@ -31,6 +31,19 @@ func _ready() -> void:
 	_joy_ring.visible = false; _joy_knob.visible = false
 	_layout()
 	get_viewport().size_changed.connect(_layout)
+	visibility_changed.connect(func():
+		if not visible:
+			release_all())
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED:
+		release_all()
+
+## Forget every finger (dialogs, pause, hiding the layer).
+func release_all() -> void:
+	_release_move()
+	_joy_index = -1
+	_look_index = -1
 
 func _screen() -> Vector2:
 	return get_viewport().get_visible_rect().size

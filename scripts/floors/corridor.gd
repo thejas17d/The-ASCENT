@@ -5,6 +5,7 @@ extends Node3D
 ## end lobby z -44..-49, walls' inner faces at x = ±1.5.
 
 const Mat := preload("res://scripts/systems/mat_lib.gd")
+const Batcher := preload("res://scripts/systems/batcher.gd")
 
 const SLOTS := 10          # door slots per side, 4 m each
 const SLOT_LEN := 4.0
@@ -15,6 +16,9 @@ const H := 3.0
 const ROOM213_SLOT := 6    # left side, slot 6 normally labelled 214
 
 var room213_open := false
+var _target: Node3D            # where builders put nodes: a cached shell or this pass
+var _shells := {}              # open_213 (bool) -> Node3D, built + batched once
+var _dyn: Node3D               # everything that can change between passes
 var light_scale := 1.0        # Night Shift / altered-floor dimming, applied every rebuild
 var figure: Node3D
 var knock_doors: Array = []   # StaticBody3D per door id (null for Room 213)
@@ -63,37 +67,33 @@ func door_numbers() -> Array:
 
 ## anomaly: "" for a clean pass. streak drives the tally + clues.
 func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> void:
-	for c in get_children():
-		remove_child(c)
-		c.queue_free()
+	if _dyn:
+		remove_child(_dyn)
+		_dyn.queue_free()
 	knock_doors.clear()
 	lights.clear()
 	figure = null
 	room213_open = open_213
 	_rng.seed = seed_val if seed_val != 0 else randi()
-
-	# floors: mosaic lobbies, carpeted corridor
-	_box(Vector3(HALF_W * 2, 0.2, 5), Vector3(0, -0.1, 2.5), m_mosaic)
-	for k in int(LEN / SLOT_LEN):
-		_box(Vector3(HALF_W * 2, 0.2, SLOT_LEN), Vector3(0, -0.1, -SLOT_LEN * k - SLOT_LEN / 2), m_carpet)
-	_box(Vector3(HALF_W * 2, 0.2, 5), Vector3(0, -0.1, -46.5), m_mosaic)
-	# ceiling in segments too (5 m lobbies + 4 m slots)
-	_box(Vector3(HALF_W * 2 + 0.4, 0.2, 5), Vector3(0, H + 0.1, 2.5), m_ceiling)
-	for k in int(LEN / SLOT_LEN):
-		_box(Vector3(HALF_W * 2 + 0.4, 0.2, SLOT_LEN), Vector3(0, H + 0.1, -SLOT_LEN * k - SLOT_LEN / 2), m_ceiling)
-	_box(Vector3(HALF_W * 2 + 0.4, 0.2, 5), Vector3(0, H + 0.1, -46.5), m_ceiling)
+	# the shell (floors, ceilings, walls, trims, door frames, Room 213) never
+	# changes within a variant: build and batch it once, then just show it
+	if not _shells.has(open_213):
+		var sh := Node3D.new()
+		sh.name = "Shell213" if open_213 else "Shell"
+		add_child(sh)
+		_shells[open_213] = sh
+		_target = sh
+		_build_shell(open_213)
+		Batcher.batch(sh)
+	for k in _shells:
+		_shells[k].visible = (k == open_213)
+	_dyn = Node3D.new(); _dyn.name = "Pass"
+	add_child(_dyn)
+	_target = _dyn
 	if anomaly == "ceiling_low":
 		_box(Vector3(HALF_W * 2, 0.7, 12), Vector3(0, H - 0.35, -22), m_ceiling)
-	# end caps
-	_box(Vector3(HALF_W * 2 + 0.4, H, 0.2), Vector3(0, H / 2, 5), m_lobby_wall)
-	_box(Vector3(HALF_W * 2 + 0.4, H, 0.2), Vector3(0, H / 2, -49), m_lobby_wall)
-	# lobby side walls (plain paint) + slot 10 run-out (wainscoted)
-	for side in [-1, 1]:
-		_wall(side, 2.5, 5.0, m_lobby_wall, false)
-		_wall(side, -46.5, 5.0, m_lobby_wall, false)
-		_wall(side, -42.0, 4.0, m_wallpaper, true)
 
-	# walls + doors per slot
+	# doors per slot (walls and frames live in the shell)
 	var nums := door_numbers()
 	var wrong_door := _rng.randi_range(0, SLOTS * 2 - 1)
 	var ajar_door := _rng.randi_range(0, SLOTS * 2 - 1)
@@ -103,16 +103,10 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 			var side := -1 if s == 0 else 1
 			var idx := i * 2 + s
 			if side == -1 and i == ROOM213_SLOT and open_213:
-				_wall(side, zc + 1.25, 1.5, m_wallpaper, true)
-				_wall(side, zc - 1.25, 1.5, m_wallpaper, true)
-				_box(Vector3(0.2, 0.9, 1.0), Vector3(side * HALF_W, H - 0.45, zc), m_wallpaper)
-				_door_frame(side, zc)
-				_build_room213(zc)
 				var l213 := _label("213", Vector3(side * (FACE - 0.01), 2.45, zc), side, Color(0.75, 0.05, 0.05), 56)
 				l213.shaded = false
 				knock_doors.append(null)
 				continue
-			_wall(side, zc, SLOT_LEN, m_wallpaper, true)
 			var num := str(nums[idx])
 			if anomaly == "door_number" and idx == wrong_door:
 				num = num.reverse() if num.reverse() != num else str(nums[idx] + 50)
@@ -123,7 +117,45 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 				door.rotation.y = deg_to_rad(28) * side
 				door.position.z += 0.25
 			knock_doors.append(door)
+	_build_pass(anomaly, streak)
 
+## Static architecture for one Room 213 variant.
+func _build_shell(open_213: bool) -> void:
+	# floors: mosaic lobbies, carpeted corridor
+	_box(Vector3(HALF_W * 2, 0.2, 5), Vector3(0, -0.1, 2.5), m_mosaic)
+	for k in int(LEN / SLOT_LEN):
+		_box(Vector3(HALF_W * 2, 0.2, SLOT_LEN), Vector3(0, -0.1, -SLOT_LEN * k - SLOT_LEN / 2), m_carpet)
+	_box(Vector3(HALF_W * 2, 0.2, 5), Vector3(0, -0.1, -46.5), m_mosaic)
+	# ceiling in segments too (5 m lobbies + 4 m slots)
+	_box(Vector3(HALF_W * 2 + 0.4, 0.2, 5), Vector3(0, H + 0.1, 2.5), m_ceiling)
+	for k in int(LEN / SLOT_LEN):
+		_box(Vector3(HALF_W * 2 + 0.4, 0.2, SLOT_LEN), Vector3(0, H + 0.1, -SLOT_LEN * k - SLOT_LEN / 2), m_ceiling)
+	_box(Vector3(HALF_W * 2 + 0.4, 0.2, 5), Vector3(0, H + 0.1, -46.5), m_ceiling)
+	# end caps
+	_box(Vector3(HALF_W * 2 + 0.4, H, 0.2), Vector3(0, H / 2, 5), m_lobby_wall)
+	_box(Vector3(HALF_W * 2 + 0.4, H, 0.2), Vector3(0, H / 2, -49), m_lobby_wall)
+	# lobby side walls (plain paint) + slot 10 run-out (wainscoted)
+	for side in [-1, 1]:
+		_wall(side, 2.5, 5.0, m_lobby_wall, false)
+		_wall(side, -46.5, 5.0, m_lobby_wall, false)
+		_wall(side, -42.0, 4.0, m_wallpaper, true)
+
+	# slot walls + door frames (Room 213's doorway in the open variant)
+	for i in SLOTS:
+		var zc := -SLOT_LEN * i - SLOT_LEN / 2
+		for side in [-1, 1]:
+			if side == -1 and i == ROOM213_SLOT and open_213:
+				_wall(side, zc + 1.25, 1.5, m_wallpaper, true)
+				_wall(side, zc - 1.25, 1.5, m_wallpaper, true)
+				_box(Vector3(0.2, 0.9, 1.0), Vector3(side * HALF_W, H - 0.45, zc), m_wallpaper)
+				_door_frame(side, zc)
+				_build_room213(zc)
+				continue
+			_wall(side, zc, SLOT_LEN, m_wallpaper, true)
+			_door_frame(side, zc)
+
+## Everything that can differ between passes: fixtures, paintings, props, anomalies, lobby.
+func _build_pass(anomaly: String, streak: int) -> void:
 	# ceiling fixtures: 1990s fluorescent diffusers
 	var light_zs := [2.5, -2.0, -10.0, -18.0, -26.0, -34.0, -42.0, -46.5]
 	var victim := _rng.randi_range(1, 5)
@@ -146,7 +178,7 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 		l.light_volumetric_fog_energy = 0.7
 		l.shadow_enabled = Graphics.lamp_shadows()
 		l.position = Vector3(0, H - 0.25, z)
-		add_child(l)
+		_target.add_child(l)
 		lights.append(l)
 
 	# paintings at slot boundaries
@@ -210,6 +242,8 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 	if streak >= 4:
 		var clue := _label("213 IS REAL", Vector3(0.9, 1.3, -48.88), 0, Color(0.9, 0.9, 0.88), 44)
 		clue.shaded = true
+	if figure:
+		figure.set_meta("dynamic", true)    # it turns to watch you
 
 # ---------------------------------------------------------------- pieces
 
@@ -232,10 +266,9 @@ func _door_frame(side: int, zc: float) -> void:
 ## Panelled veneer door with brass number plate and lever handle.
 ## Everything is parented to the door body so "ajar" rotates it all.
 func _door(side: int, zc: float, num: String) -> StaticBody3D:
-	_door_frame(side, zc)
 	var body := StaticBody3D.new()
 	body.position = Vector3(side * (FACE - 0.02), 1.05, zc)
-	add_child(body)
+	_target.add_child(body)
 	var cs := CollisionShape3D.new(); var sh := BoxShape3D.new(); sh.size = Vector3(0.08, 2.1, 1.0)
 	cs.shape = sh; body.add_child(cs)
 	var out := -side   # direction facing into the corridor
@@ -288,12 +321,12 @@ func _almirah(base: Vector3) -> void:
 	hide_spot = Node3D.new()
 	hide_spot.position = Vector3(base.x, 0.0, base.z)
 	hide_spot.rotation.y = 0.0
-	add_child(hide_spot)
+	_target.add_child(hide_spot)
 
 func _figure(pos: Vector3) -> Node3D:
 	var f := Node3D.new()
 	f.position = pos
-	add_child(f)
+	_target.add_child(f)
 	var coat := Mat.solid(Color(0.025, 0.025, 0.028), 0.95)
 	var body := MeshInstance3D.new()
 	var cm := CapsuleMesh.new(); cm.radius = 0.27; cm.height = 1.95
@@ -329,7 +362,7 @@ func _stain(pos: Vector3, size: Vector3) -> void:
 	d.size = size
 	d.position = pos
 	d.rotation.z = PI / 2       # project along +X into the right wall
-	add_child(d)
+	_target.add_child(d)
 
 func _build_room213(zc: float) -> void:
 	var red := Mat.pbr("decrepit_wallpaper", 1.6, Color(0.7, 0.18, 0.15))
@@ -344,14 +377,14 @@ func _build_room213(zc: float) -> void:
 	l.light_color = Color(1, 0.12, 0.06); l.light_energy = 2.2; l.omni_range = 5
 	l.shadow_enabled = true
 	l.position = Vector3(-HALF_W - 1.7, 2.3, zc)
-	add_child(l)
+	_target.add_child(l)
 	var w := _label("2 1 3", Vector3(-HALF_W - 3.29, 1.6, zc), 1, Color(0.9, 0.85, 0.8), 120)
 	w.shaded = true
 
 func _chair(pos: Vector3, rot: float) -> void:
 	var n := Node3D.new()
 	n.position = pos; n.rotation.y = rot
-	add_child(n)
+	_target.add_child(n)
 	var legs := Mat.solid(Color(0.12, 0.12, 0.13), 0.4, 0.8)
 	_child_box(n, Vector3(0.48, 0.05, 0.46), Vector3(0, 0.47, 0), m_ply)
 	_child_box(n, Vector3(0.48, 0.5, 0.04), Vector3(0, 0.76, 0.21), m_ply)
@@ -372,13 +405,13 @@ func _label(t: String, pos: Vector3, side: int, col: Color, size: int) -> Label3
 		1: l.rotation.y = -PI / 2
 		2: l.rotation.y = PI
 		_: l.rotation.y = 0.0
-	add_child(l)
+	_target.add_child(l)
 	return l
 
 func _mesh(mesh: Mesh, pos: Vector3, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh; mi.material_override = mat; mi.position = pos
-	add_child(mi)
+	_target.add_child(mi)
 	return mi
 
 ## Box with collision (default) or visual-only. Accepts a Material or a Color.
@@ -390,7 +423,7 @@ func _box(size: Vector3, pos: Vector3, mat: Variant, collide := true) -> Node3D:
 	mi.material_override = m
 	if not collide:
 		mi.position = pos
-		add_child(mi)
+		_target.add_child(mi)
 		return mi
 	var body := StaticBody3D.new()
 	body.position = pos
@@ -399,7 +432,7 @@ func _box(size: Vector3, pos: Vector3, mat: Variant, collide := true) -> Node3D:
 	cs.shape = sh
 	body.add_child(cs)
 	body.add_child(mi)
-	add_child(body)
+	_target.add_child(body)
 	return body
 
 # ---------------------------------------------------------------- placeables
@@ -407,7 +440,7 @@ func _box(size: Vector3, pos: Vector3, mat: Variant, collide := true) -> Node3D:
 func add_pickup(kind: String, pos: Vector3) -> Node3D:
 	var b := StaticBody3D.new()
 	b.position = pos
-	add_child(b)
+	_target.add_child(b)
 	var cs := CollisionShape3D.new(); var sh := BoxShape3D.new(); sh.size = Vector3(0.25, 0.2, 0.25)
 	cs.shape = sh; b.add_child(cs)
 	match kind:
@@ -445,7 +478,7 @@ func add_chalk(pos: Vector3, normal: Vector3) -> Label3D:
 	var l := Label3D.new()
 	l.text = "X"; l.font_size = 64; l.pixel_size = 0.004
 	l.modulate = Color(0.95, 0.95, 0.92); l.shaded = true
-	add_child(l)
+	_target.add_child(l)
 	l.global_position = pos + normal * 0.02
 	if abs(normal.y) < 0.9:
 		l.look_at(l.global_position - normal, Vector3.UP)
@@ -456,7 +489,7 @@ func add_chalk(pos: Vector3, normal: Vector3) -> Label3D:
 
 func add_diya(pos: Vector3) -> Node3D:
 	var n := Node3D.new()
-	add_child(n)
+	_target.add_child(n)
 	n.global_position = Vector3(pos.x, 0.0, pos.z)
 	var cm := CylinderMesh.new(); cm.top_radius = 0.08; cm.bottom_radius = 0.05; cm.height = 0.05
 	var cup := MeshInstance3D.new()

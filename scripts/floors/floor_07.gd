@@ -9,7 +9,7 @@ extends FloorBase
 const Supervisor := preload("res://scripts/ai/supervisor.gd")
 const WORKERS := [["ramesh", "RAMESH PATIL"], ["suresh", "SURESH YADAV"], ["abdul", "ABDUL KARIM"],
 	["joseph", "JOSEPH D'SOUZA"], ["mahadev", "MAHADEV GAIKWAD"], ["babu", "BABU RAO"]]
-const WORKER_POS := [Vector3(-10, 0, 6), Vector3(10, 0, 5), Vector3(-11, 0, -6), Vector3(11, 0, -7), Vector3(-5, 0, -11), Vector3(6, 0, -11)]
+const WORKER_POS := [Vector3(-11.5, 0, 7.5), Vector3(10, 0, 5), Vector3(-11, 0, -6), Vector3(11, 0, -7), Vector3(-5, 0, -11), Vector3(6, 0, -11)]
 const CREEP_SPEED := 1.1
 const GAZE_DEATH := 1.6
 const OVERSEER := Vector3(0, 1.2, -3)
@@ -61,12 +61,14 @@ func _build() -> void:
 			continue
 		var d: Node3D = kit.box(size, pos, kit.m.concrete, false)
 		d.rotation = Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU)
+		d.set_meta("dynamic", true)   # slowly turning
 		_debris.append([d, Vector3(rng.randf_range(-0.05, 0.05), rng.randf_range(-0.08, 0.08), rng.randf_range(-0.05, 0.05))])
 	for p in [Vector3(-7, 1.8, -1), Vector3(7, 1.8, -1), Vector3(0, 1.8, 9), Vector3(-6, 1.8, -12), Vector3(6, 1.8, 3)]:
 		kit.lamp(p, "work", Color(1.0, 0.45, 0.25), 0.9, 8.0)
 	kit.board(Vector3(-4.0, 1.5, 11.86), PI, rules.rules)
 	kit.note("c_tag", Vector3(1.5, 0.006, 9.8))
-	kit.item("voice_3", "cassette (voice note)", Vector3(-2.0, 0.0, 9.6), "tape", Color(0.75, 0.2, 0.15))
+	if not GameState.collectibles.has("voice_3"):
+		kit.item("voice_3", "cassette (voice note)", Vector3(-2.0, 0.0, 9.6), "tape", Color(0.75, 0.2, 0.15))
 	kit.stair_exit(Vector3(0, 0, -13.85), 0.0, "STAIRS ▲  8")
 	# the overseer: the Supervisor's body, dormant, lamp red, facing the stairs
 	overseer = Supervisor.new()

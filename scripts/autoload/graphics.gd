@@ -5,14 +5,58 @@ extends Node
 ## Ultra renders at native resolution (4K/UHD on a 4K display) with MSAA+TAA.
 
 signal changed
+signal auto_lowered(new_quality: int)
 
 const PRESETS := ["Low", "Medium", "High", "Ultra"]
+const INTEGRATED_HINTS := ["intel", "uhd", "iris", "radeon(tm) graphics", "radeon graphics", "vega", "adreno", "mali", "powervr", "apple"]
+const SLOW_FRAME_MS := 25.0     # auto mode steps down if a gameplay window averages slower (< 40 fps)
+const WINDOW_S := 4.0
+const SETTLE_S := 3.0           # ignore shader-compile spikes after a load / change
 
 var quality := 2
 var env: Environment          # the active floor's environment (re-configured live)
+var auto_mode := false        # Settings → Graphics quality = Auto
+var _measuring := false
+var _settle := 0.0
+var _acc := 0.0
+var _frames := 0
 
 func _ready() -> void:
 	quality = 1 if is_mobile() else 2
+
+## Integrated / mobile GPUs start on Medium; discrete GPUs on High.
+func detect_level() -> int:
+	if is_mobile():
+		return 1
+	var name := RenderingServer.get_video_adapter_name().to_lower()
+	for h in INTEGRATED_HINTS:
+		if h in name:
+			return 1
+	return 2
+
+## Floors call this when gameplay starts: auto mode then watches frame times.
+func begin_measure() -> void:
+	_measuring = auto_mode
+	_settle = SETTLE_S
+	_acc = 0.0; _frames = 0
+
+func _process(d: float) -> void:
+	if not _measuring or get_tree().paused:
+		return
+	if _settle > 0.0:
+		_settle -= d
+		return
+	_acc += d; _frames += 1
+	if _acc < WINDOW_S:
+		return
+	var avg_ms := _acc / _frames * 1000.0
+	_acc = 0.0; _frames = 0
+	if avg_ms > SLOW_FRAME_MS and quality > 0:
+		apply(quality - 1)
+		_settle = SETTLE_S
+		GameState.settings["auto_level"] = quality
+		GameState.save_settings()
+		auto_lowered.emit(quality)
 
 func is_mobile() -> bool:
 	return OS.has_feature("mobile")
@@ -32,29 +76,38 @@ func apply(q: int) -> void:
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
 	vp.use_taa = false
 	vp.msaa_3d = Viewport.MSAA_DISABLED
+	# Low/Medium render below native and upscale with AMD FSR 1 on Forward+ (sharper than
+	# bilinear; the Mobile renderer doesn't support FSR in 4.4, so phones use bilinear). High/Ultra render at native resolution (UHD on a 4K display).
 	match quality:
 		0:
-			vp.scaling_3d_scale = 0.7
+			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if forward_plus() else Viewport.SCALING_3D_MODE_BILINEAR
+			vp.scaling_3d_scale = 0.67
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
 			vp.positional_shadow_atlas_size = 1024
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_HARD)
 		1:
-			vp.scaling_3d_scale = 0.9
-			vp.msaa_3d = Viewport.MSAA_2X
+			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if forward_plus() else Viewport.SCALING_3D_MODE_BILINEAR
+			vp.scaling_3d_scale = 0.8
+			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
 			vp.positional_shadow_atlas_size = 2048
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_LOW)
+			RenderingServer.environment_set_ssao_quality(RenderingServer.ENV_SSAO_QUALITY_VERY_LOW, true, 0.5, 2, 50.0, 300.0)
 		2:
 			vp.scaling_3d_scale = 1.0
 			vp.use_taa = forward_plus()
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED if forward_plus() else Viewport.SCREEN_SPACE_AA_FXAA
 			vp.positional_shadow_atlas_size = 4096
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+			RenderingServer.environment_set_ssao_quality(RenderingServer.ENV_SSAO_QUALITY_MEDIUM, true, 0.5, 2, 50.0, 300.0)
+			RenderingServer.environment_set_volumetric_fog_volume_size(64, 64)
 		3:
 			vp.scaling_3d_scale = 1.0
 			vp.use_taa = forward_plus()
-			vp.msaa_3d = Viewport.MSAA_4X
+			vp.msaa_3d = Viewport.MSAA_2X
 			vp.positional_shadow_atlas_size = 8192
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
+			RenderingServer.environment_set_ssao_quality(RenderingServer.ENV_SSAO_QUALITY_HIGH, false, 0.5, 2, 50.0, 300.0)
+			RenderingServer.environment_set_volumetric_fog_volume_size(128, 96)
 	if env:
 		configure(env)
 	changed.emit()

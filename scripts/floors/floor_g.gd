@@ -102,6 +102,7 @@ func _build() -> void:
 
 func _fan(p: Vector3) -> Node3D:
 	var n := Node3D.new(); n.position = p + Vector3(0, -0.45, 0); add_child(n)
+	n.set_meta("dynamic", true)
 	kit.cyl(0.015, 0.4, p + Vector3(0, -0.2, 0), kit.m.black)
 	kit.cyl(0.12, 0.12, Vector3.ZERO, Color(0.5, 0.48, 0.42), n)
 	for k in 3:

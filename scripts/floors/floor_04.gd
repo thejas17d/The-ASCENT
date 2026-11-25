@@ -113,7 +113,7 @@ func _build() -> void:
 	# BEDROOM (x 1..7, z -7..-12)
 	kit.box(Vector3(1.0, 0.45, 2.0), Vector3(6.3, 0.225, -10.6), kit.m.wood)
 	kit.box(Vector3(0.95, 0.12, 1.95), Vector3(6.3, 0.51, -10.6), Color(0.35, 0.45, 0.65))
-	kit.item("h_tape", "cassette tape", Vector3(5.7, 0.58, -9.9), "tape", Color(0.15, 0.15, 0.2))
+	kit.item("h_tape", "cassette tape", Vector3(6.0, 0.575, -9.9), "tape", Color(0.15, 0.15, 0.2))
 	kit.box(Vector3(1.0, 0.75, 0.5), Vector3(2.0, 0.375, -11.6), kit.m.wood)
 	kit.item("h_photo_birthday", "photograph (birthday)", Vector3(2.0, 0.76, -11.5), "photo", Color(0.9, 0.85, 0.7))
 	# lights: warm household tubes and bulbs
@@ -138,6 +138,7 @@ func _clutter() -> void:
 	for z in [-1.2, 0.2]:   # cushions
 		kit.box(Vector3(0.35, 0.3, 0.35), Vector3(-6.55, 0.6, z), Color(0.7, 0.5, 0.15), false)
 	var fan := Node3D.new(); fan.position = Vector3(-3.0, 2.6, -0.2); add_child(fan)   # ceiling fan
+	fan.set_meta("dynamic", true)
 	kit.cyl(0.1, 0.1, Vector3.ZERO, Color(0.4, 0.38, 0.33), fan)
 	for k in 3:
 		var b := kit.box(Vector3(0.8, 0.01, 0.12), Vector3(cos(k * TAU / 3) * 0.45, 0, sin(k * TAU / 3) * 0.45), Color(0.45, 0.42, 0.36), false, fan)
@@ -190,6 +191,7 @@ func _seg(c: Vector3, s: Vector3, lintel_from := 0.0) -> void:
 
 func _build_mother() -> void:
 	mother = Node3D.new(); add_child(mother)
+	mother.set_meta("dynamic", true)
 	mother.position = _mother_path[0]
 	var saree := Mat_solid(Color(0.55, 0.08, 0.08), 0.85)
 	var skin := Mat_solid(Color(0.42, 0.3, 0.22), 0.7)
@@ -241,6 +243,9 @@ func on_item_taken(id: String, node: Node3D) -> bool:
 	return true
 
 func _photo(node: Node3D, text: String) -> void:
+	var id := str(node.get_meta("item", ""))
+	if id != "" and not GameState.collectibles.has(id):
+		GameState.collectibles.append(id)
 	node.queue_free()
 	photos += 1
 	hud.show_panel(text + "\n\n[E] close")
@@ -286,8 +291,10 @@ func _open_study() -> void:
 func read_letter() -> void:
 	hud.show_panel("Arjun,\n\nOn the night of your birthday I signed a report that said this building was safe. It was not.\nThe supervisor said the owner would ruin us. I told myself one more night would not matter.\nI was not home by eight. Six men did not go home at all.\n\nIf you keep this letter, someone will finally know.\nIf you burn it, you can forget. I tried. I never could.\n\n— Papa\n\n[E] continue")
 	await get_tree().create_timer(0.1, false).timeout
-	while hud.panel_open():
+	while is_inside_tree() and hud.panel_open():
 		await get_tree().process_frame
+	if not is_inside_tree():
+		return
 	var pick: int = await hud.ask_choice("Papa's letter.", ["Keep the letter.", "Burn it in the pooja diya."])
 	choose_letter(pick == 0)
 
@@ -329,7 +336,7 @@ func surface_at(_p: Vector3) -> String: return "tile"
 
 func _process(d: float) -> void:
 	super._process(d)
-	if finished or busy:
+	if finished or busy or hud.dialog_open() or not player.input_enabled:
 		return
 	_update_mother(d)
 	if dinner_t > 0.0:

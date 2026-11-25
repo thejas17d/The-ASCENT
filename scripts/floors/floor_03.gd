@@ -68,7 +68,8 @@ func _build() -> void:
 		kit.item("r_page_%d" % i, "torn page", page_spots[i], "page", Color(0.85, 0.8, 0.68))
 	kit.board(Vector3(-3.0, 1.6, 15.88), PI, rules.rules)
 	kit.note("r_archivist", Vector3(1.2, 0.006, 13.5))
-	kit.item("voice_1", "cassette (voice note)", Vector3(7.3, 0.79, -14.5), "tape", Color(0.75, 0.2, 0.15))
+	if not GameState.collectibles.has("voice_1"):
+		kit.item("voice_1", "cassette (voice note)", Vector3(7.3, 0.79, -14.5), "tape", Color(0.75, 0.2, 0.15))
 	kit.stair_exit(Vector3(0, 0, -16.03), 0.0, "STAIRS ▲  4")
 	exit_hint = "Locked. The report isn't whole yet."
 	for p in [Vector3(0, 3.2, 12), Vector3(-6, 3.2, 3), Vector3(6, 3.2, -5), Vector3(0, 3.2, -13), Vector3(-6, 3.2, -9), Vector3(6, 3.2, 7)]:
@@ -112,7 +113,7 @@ func _bake() -> void:
 	var nm := NavigationMesh.new()
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = 1
-	nm.agent_radius = 0.45; nm.agent_height = 2.0; nm.agent_max_climb = 0.3
+	nm.agent_radius = 0.5; nm.agent_height = 2.0; nm.agent_max_climb = 0.25
 	nav.navigation_mesh = nm
 	nav.bake_navigation_mesh(false)
 

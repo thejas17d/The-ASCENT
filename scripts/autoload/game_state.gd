@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS := {
 	"touch_sensitivity": 1.0,
 	"gyro": false,              # tilt the phone to look
 	"haptics": true,
+	"auto_level": -1,           # remembered Auto quality (set when Auto steps down)
 }
 
 var floor_num := 2
@@ -147,7 +148,13 @@ func load_game() -> bool:
 	solved = {}
 	for k in _dict(data.get("solved")):
 		solved[int(k)] = true
-	unlocks.merge(_dict(data.get("unlocks")), true)
+	var saved_unlocks := _dict(data.get("unlocks"))
+	var mem: Array = unlocks.get("memories", [])
+	for m in saved_unlocks.get("memories", []):
+		if not mem.has(m):
+			mem.append(m)
+	unlocks.merge(saved_unlocks, false)     # never overwrite newer unlocks
+	unlocks["memories"] = mem
 	var c = data.get("collectibles", [])
 	collectibles = c if typeof(c) == TYPE_ARRAY else []
 	Dread.reset(minf(float(data.get("dread", 0.0)), 70.0))
@@ -203,7 +210,10 @@ func save_settings() -> void:
 
 func apply_settings() -> void:
 	var q := int(settings.quality)
-	q = q if q >= 0 else (1 if Graphics.is_mobile() else 2)
+	Graphics.auto_mode = q < 0
+	if q < 0:   # Auto: what we learned last time, else a GPU-based guess
+		var learned := int(settings.get("auto_level", -1))
+		q = learned if learned >= 0 else Graphics.detect_level()
 	if q != Graphics.quality or not _applied_once:
 		Graphics.apply(q)
 	_applied_once = true

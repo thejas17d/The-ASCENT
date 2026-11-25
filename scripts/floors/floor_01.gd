@@ -36,6 +36,9 @@ func _ready() -> void:
 	load_floor_data(1)
 	kit = Kit.new(self)
 	_build()
+	if GameState.altered_level(1) > 0:
+		for c in chairs:
+			c.look_at(Vector3(0, 0, 0.6), Vector3.UP)   # every chair turned toward the entrance
 	setup_common()
 	spawn = Vector3(0, 0.05, 0.6)
 	begin_floor()
@@ -43,9 +46,25 @@ func _ready() -> void:
 		for i in 6:
 			_mark_returned(i, false)
 		unlock_exit("")
-	if GameState.altered_level(1) > 0:
-		for c in chairs:
-			c.look_at(Vector3(0, 0, 0.6), Vector3.UP)   # every chair turned toward the entrance
+	# the item in your hands (saved) must not also lie on its desk
+	if GameState.carry != "":
+		var held := _item_node(GameState.carry)
+		if held:
+			held.queue_free()
+
+func _item_node(id: String) -> Node:
+	for c in get_children():
+		if c.has_meta("item") and str(c.get_meta("item")) == id:
+			return c
+	return null
+
+func apply_checkpoint(cp: Dictionary) -> void:
+	for k in cp.get("returned", []):
+		var i := int(k)
+		_mark_returned(i, false)
+		var n := _item_node("o_item_%d" % i)
+		if n:
+			n.queue_free()
 
 func _build() -> void:
 	kit.room(Vector3(0, 0, -10), 20.0, 18.0, 3.2, kit.m.paint, kit.m.carpet_grey, kit.m.ceiling,
@@ -124,6 +143,9 @@ func on_item_taken(id: String, node: Node3D) -> bool:
 		hud.message("Your hands are full.", 2)
 		return true
 	var k := int(id.trim_prefix("o_item_"))
+	if returned[k]:
+		node.queue_free()
+		return true
 	GameState.carry = id
 	node.queue_free()
 	var named := "" if k == 4 else (" A strip of tape on it reads: " + str(WORKERS[k].name) + ".")
@@ -148,6 +170,12 @@ func use_locker(i: int) -> bool:
 		return false
 	GameState.carry = ""
 	_mark_returned(i, true)
+	var done: Array = []
+	for j in 6:
+		if returned[j]:
+			done.append(j)
+	GameState.checkpoint = {"returned": done}
+	GameState.save_game()
 	return true
 
 func _mark_returned(i: int, announce: bool) -> void:

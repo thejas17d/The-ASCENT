@@ -168,7 +168,7 @@ func fade_to(a: float, secs := 0.8) -> void:
 	_fade_tw.tween_property(_fade, "color:a", a, secs)
 	# don't await `finished`: a killed tween never emits it and would soft-lock callers
 	var tw := _fade_tw
-	while tw.is_valid() and tw.is_running():
+	while is_inside_tree() and tw.is_valid() and tw.is_running():
 		await get_tree().process_frame
 
 func fade_alpha() -> float:
@@ -236,6 +236,10 @@ func ask_choice(title: String, options: Array) -> int:
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD
 		b.pressed.connect(func(): _finish_dialog(i))
 		v.add_child(b)
+	for c in v.get_children():          # keyboard/controller focus on the first usable choice
+		if c is Button and not c.disabled:
+			c.call_deferred("grab_focus")
+			break
 	add_child(_dialog)
 	move_child(_dialog, get_child_count() - 2)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

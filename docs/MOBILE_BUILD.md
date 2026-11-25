@@ -3,9 +3,10 @@
 ## Install on your phone (quickest)
 1. On the phone: Settings → About → tap *Build number* 7× → Developer options → **USB debugging ON**.
 2. Plug it in by USB, accept the "Allow USB debugging?" prompt.
-3. Double-click **`build_android.cmd`** — it builds `build/TheAscent.apk` and runs `adb install -r` on it.
+3. Double-click **`build_android.cmd`** — it builds `build/TheAscent-phone.apk` (arm64, ≈ 59 MB) and runs `adb install -r` on it.
 
-Or copy `build/TheAscent.apk` to the phone and open it (allow "install unknown apps").
+Or copy `build/TheAscent-phone.apk` to the phone and open it (allow "install unknown apps").
+(The `Android` preset additionally includes x86_64 for emulators, ≈ 86 MB.)
 
 ## What's set up (this PC)
 | Piece | Where |
@@ -24,7 +25,7 @@ Manual build: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64_console.exe" --he
 - Architectures: **arm64-v8a** (phones) + **x86_64** (emulators). For a store/release build drop x86_64 (−80 MB).
 - Landscape (sensor), immersive full-screen, **VIBRATE** permission.
 - Exports `*.json` data (non-resource files) and **excludes the 2K textures** — phones use the 1K set (`assets/textures_1k/`, 21 MB of JPGs, ETC2/ASTC-compressed on import). APK ≈ 86 MB (target was < 300 MB).
-- Renderer on phones: **Mobile** (`rendering_method.mobile`). No volumetric fog/SSAO/SSIL/SSR there — `Graphics` skips them automatically; default preset Medium.
+- Renderer on phones: **Mobile** (`rendering_method.mobile`). No volumetric fog/SSAO/SSIL/SSR there — `Graphics` skips them automatically; default preset Medium (bilinear 0.8 scale + FXAA; FSR is Forward+-only in Godot 4.4).
 
 ## Touch controls
 Automatic on phones (Settings → Mobile → Touch controls: Auto / Always / Never; *Always* lets you try them on desktop).

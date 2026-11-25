@@ -91,7 +91,7 @@ func light_on() -> bool:
 func _unhandled_input(e: InputEvent) -> void:
 	if get_tree().paused:
 		return
-	if e is InputEventMouseButton and e.pressed:
+	if e is InputEventMouseButton and e.pressed and not ui_lock:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if not _can_act():
 		return

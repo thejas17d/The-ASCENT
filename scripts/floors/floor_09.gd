@@ -168,5 +168,11 @@ func leave() -> void:
 	await get_tree().create_timer(6.0, false).timeout
 	GameState.go("res://scenes/menu.tscn")
 
+## The blueprint is a quiet place: no dread builds here, and a breakdown can't
+## throw you into a story floor in a mode that can't save.
+func in_safe_zone() -> bool: return true
+func on_breakdown() -> void:
+	Dread.reset(0.0)
+
 func floor_lights() -> Array: return kit.lights
 func surface_at(_p: Vector3) -> String: return "tile"

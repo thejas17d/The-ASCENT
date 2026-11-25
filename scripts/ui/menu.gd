@@ -53,6 +53,14 @@ func _ready() -> void:
 	_button("Test: The Supervisor", func(): get_tree().change_scene_to_file("res://scenes/dev/supervisor_test.tscn"))
 	_button("Settings", _open_settings)
 	_button("Quit", func(): get_tree().quit())
+	var ver := Label.new()
+	ver.text = "v" + str(ProjectSettings.get_setting("application/config/version", "dev"))
+	ver.add_theme_color_override("font_color", UiTheme.DIM)
+	ver.add_theme_font_size_override("font_size", 14)
+	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	ver.offset_left = -120; ver.offset_top = -36; ver.offset_right = -20; ver.offset_bottom = -12
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(ver)
 	var hint := Label.new(); hint.text = "Headphones recommended."
 	hint.add_theme_color_override("font_color", UiTheme.DIM)
 	hint.add_theme_font_size_override("font_size", 15)

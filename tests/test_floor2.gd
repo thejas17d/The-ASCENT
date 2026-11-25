@@ -69,8 +69,8 @@ func _initialize() -> void:
 	var outside := 0
 	for i in 20:
 		main._new_pass()
-		for c in main.corridor.get_children():
-			if (c.has_meta("pickup") or c.has_meta("note")) and c.position.z < 0.0:
+		for c in _all(main.corridor):
+			if (c.has_meta("pickup") or c.has_meta("note")) and c.global_position.z < 0.0:
 				outside += 1
 	check(outside == 0, "pickups and notes never spawn in the judged corridor")
 	main.went_deep = false
@@ -153,7 +153,7 @@ func _initialize() -> void:
 	main.player.set_phone(false)
 	main.streak = 3; main.corridor.build("", 3, false, 7); await process_frame
 	var ghost: Label3D = null
-	for c in main.corridor.get_children():
+	for c in _all(main.corridor):
 		if c is Label3D and c.layers == 2:
 			ghost = c
 	check(ghost != null and _inside_any_door(main.corridor, ghost.global_position) == "", "phone clue exists and is not inside a door (review #4)")
@@ -239,10 +239,18 @@ func _inside_any_door(cor: Node, p: Vector3) -> String:
 			return str(b)
 	return ""
 
+## Every descendant.
+func _all(n: Node) -> Array:
+	var out := []
+	for c in n.get_children():
+		out.append(c)
+		out.append_array(_all(c))
+	return out
+
 ## Props/decals (not walls/doors/trim) whose centre sits inside a door volume.
 func _overlaps_doors(cor: Node) -> Array:
 	var bad := []
-	for c in cor.get_children():
+	for c in cor._dyn.get_children():
 		if c is Decal or (c is MeshInstance3D and c.mesh is CylinderMesh) or (c is Node3D and c.get_child_count() > 3 and not c.has_meta("door_index")):
 			var hit := _inside_any_door(cor, c.global_position)
 			if hit != "":

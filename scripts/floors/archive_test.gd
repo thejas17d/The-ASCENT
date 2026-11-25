@@ -172,9 +172,9 @@ func _bake_nav() -> void:
 	var nm := NavigationMesh.new()
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = 1
-	nm.agent_radius = 0.45
+	nm.agent_radius = 0.5
 	nm.agent_height = 2.0
-	nm.agent_max_climb = 0.3
+	nm.agent_max_climb = 0.25
 	nav.navigation_mesh = nm
 	nav.bake_navigation_mesh(false)
 

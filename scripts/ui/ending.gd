@@ -52,6 +52,8 @@ func _ready() -> void:
 		_lines.append("This is the %s building you have woken up in." % nth[loops - 1] if loops <= 5 else "You have stopped counting the buildings.")
 	if GameState.night():
 		_lines.insert(0, "(Night Shift)")
+	GameState.delete_save()   # the run is over the moment the ending begins
+	GameState.save_unlocks()  # unlocks + memories survive it
 	_show(0)
 
 func _show(i: int) -> void:
@@ -85,7 +87,7 @@ func _summary() -> void:
 	s += "The six workers:  %s\n" % str(GameState.choices.get("workers", "—"))
 	if ending == "escape":
 		s += "\nThe loop continues.  (TRUTH needs the letter kept and all six freed.)\n"
-	if GameState.unlocks.get("floor9", false):
+	if GameState.falls == 0:
 		s += "\nYou never fell.  Something has opened above the roof:  FLOOR 9.\n"
 	s += "\nNew Game+ (Night Shift) unlocked."
 	s += "\n\n— THE ASCENT —\nMade with Godot 4  ·  Textures: Poly Haven (CC0)  ·  All sound synthesised in code"
@@ -96,5 +98,4 @@ func _summary() -> void:
 	b.offset_top = -120; b.offset_bottom = -70; b.offset_left = -160; b.offset_right = 160
 	b.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/menu.tscn"))
 	add_child(b)
-	GameState.delete_save()   # the run is over
-	GameState.save_unlocks()  # unlocks + memories survive it
+	GameState.save_unlocks()

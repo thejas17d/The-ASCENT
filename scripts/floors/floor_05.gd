@@ -31,10 +31,10 @@ func _ready() -> void:
 	_bake()
 	setup_common()
 	spawn = Vector3(0, 0.05, 10.5)
-	_setup_sup()
 	_rain = AudioStreamPlayer.new(); _rain.stream = Sfx.get_stream("rain"); _rain.bus = "Ambience"
 	_rain.volume_db = -6; _rain.autoplay = true; add_child(_rain)
 	begin_floor()
+	_setup_sup()      # after begin_floor: spawn far from wherever the checkpoint put you
 
 func _build() -> void:
 	var c := Vector3(0, 0, -1)
@@ -97,7 +97,8 @@ func _build() -> void:
 		kit.lamp(p, "bulb", Color(1, 0.8, 0.5), 0.7, 5.0)
 	kit.board(Vector3(-3.0, 1.5, 11.86), PI, rules.rules)
 	kit.note("u_foreman", Vector3(2.0, 0.006, 9.5))
-	kit.item("voice_2", "cassette (voice note)", Vector3(13.2, 0.0, -3.6), "tape", Color(0.75, 0.2, 0.15))
+	if not GameState.collectibles.has("voice_2"):
+		kit.item("voice_2", "cassette (voice note)", Vector3(13.2, 0.0, -3.6), "tape", Color(0.75, 0.2, 0.15))
 	for p in [Vector3(-14.3, 0, -3.0), Vector3(14.3, 0, 8.0), Vector3(-14.3, 0, 7.0)]:
 		kit.locker(p, -PI / 2 if p.x < 0 else PI / 2)
 	_make_rain()
@@ -163,7 +164,7 @@ func _bake() -> void:
 	var nm := NavigationMesh.new()
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = 1
-	nm.agent_radius = 0.45; nm.agent_height = 2.0; nm.agent_max_climb = 0.3
+	nm.agent_radius = 0.5; nm.agent_height = 2.0; nm.agent_max_climb = 0.25
 	nav.navigation_mesh = nm
 	nav.bake_navigation_mesh(false)
 
@@ -175,7 +176,8 @@ func _setup_sup() -> void:
 	sup.senses = {"sight": false, "sound": hunt_sense == "sound", "light": hunt_sense == "light"}
 	sup.waypoints = [Vector3(-12, 0, -12), Vector3(12, 0, -12), Vector3(12, 0, 9), Vector3(-12, 0, 9), Vector3(0, 0, -2)]
 	sup.caught_player.connect(func(): die("It found you in the rain."))
-	var at: Vector3 = sup.safe_spawn_point([Vector3(-12, 0.05, -12), Vector3(12, 0.05, -12), Vector3(0, 0.05, -10)], spawn, null)
+	var at: Vector3 = sup.safe_spawn_point([Vector3(-12, 0.05, -12), Vector3(12, 0.05, -12), Vector3(0, 0.05, -10),
+		Vector3(-12, 0.05, 9), Vector3(12, 0.05, 9)], player.global_position, get_world_3d().direct_space_state)
 	sup.activate(at if at != Vector3.INF else Vector3(0, 0.05, -12))
 
 # ---------------------------------------------------------------- puzzle

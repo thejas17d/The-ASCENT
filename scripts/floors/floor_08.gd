@@ -64,6 +64,9 @@ func _build() -> void:
 			kit.box(Vector3(0.2, TANK_TOP, 0.2), TANK + Vector3(dx, TANK_TOP / 2, dz), kit.m.metal_grey)
 	kit.cyl(1.6, 2.6, TANK + Vector3(0, TANK_TOP - 1.45, 0), kit.m.metal)   # the tank; you stand on its lid
 	kit.box(Vector3(3.6, 0.12, 3.6), TANK + Vector3(0, TANK_TOP - 0.06, 0), kit.m.metal_grey)
+	# railings on the tank top (open toward the catwalk, +X)
+	for r in [[Vector3(-1.8, 0, 0), Vector3(0.05, 1.0, 3.6)], [Vector3(0, 0, -1.8), Vector3(3.6, 1.0, 0.05)], [Vector3(0, 0, 1.8), Vector3(3.6, 1.0, 0.05)]]:
+		kit.box(r[1], TANK + Vector3(0, TANK_TOP + 0.5, 0) + r[0], kit.m.metal_grey)
 	var ladder: Node3D = kit.box(Vector3(0.6, TANK_TOP, 0.12), TANK + Vector3(0, TANK_TOP / 2, 1.9), kit.m.metal_grey)
 	ladder.set_meta("use", "ladder"); ladder.set_meta("prompt", "Climb the ladder")
 	for k in 18:
@@ -87,10 +90,11 @@ func _build() -> void:
 	# roof clutter: AC units, pipes, a satellite dish, chalk note
 	for p in [Vector3(6, 0, 6), Vector3(-9, 0, 4), Vector3(10, 0, -13), Vector3(-3, 0, -12)]:
 		kit.box(Vector3(1.6, 1.1, 1.0), p + Vector3(0, 0.55, 0), kit.m.metal_grey)
-	kit.note("f_paint", Vector3(-12.5, 1.12, 2.0), 0.0)
+	kit.note("f_paint", Vector3(-14.0, 1.105, 2.0), 0.0)   # lying on the parapet
 	# crumbling sections along the chase route
 	for z in [5.0, 0.0, -3.0]:
 		var chunk: Node3D = kit.box(Vector3(4.0, 0.25, 3.0), Vector3(-4.0, 0.13, z), kit.m.concrete, false)
+		chunk.set_meta("dynamic", true)
 		_crumble.append([z, chunk, false])
 	kit.lamp(Vector3(0, 2.9, 10.5), "bulb", Color(1, 0.8, 0.5), 0.9, 5.0)
 	kit.lamp(Vector3(-8, 2.0, -3.6), "work", Color(1.0, 0.3, 0.2), 1.0, 9.0)
@@ -169,7 +173,7 @@ func _bake() -> void:
 	var nm := NavigationMesh.new()
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = 1
-	nm.agent_radius = 0.45; nm.agent_height = 2.0; nm.agent_max_climb = 0.3
+	nm.agent_radius = 0.5; nm.agent_height = 2.0; nm.agent_max_climb = 0.25
 	nav.navigation_mesh = nm
 	nav.bake_navigation_mesh(false)
 
@@ -203,7 +207,7 @@ func on_use(id: String, _node: Node3D) -> void:
 		climb()
 
 func climb() -> void:
-	if on_tank:
+	if on_tank and player.global_position.y > TANK_TOP - 1.0:
 		return
 	player.input_enabled = false
 	await hud.fade_to(1.0, 0.4)

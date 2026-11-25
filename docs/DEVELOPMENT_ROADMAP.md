@@ -73,6 +73,14 @@ See `docs/REPLAYABILITY.md`.
 - [ ] Run on a real phone: 60 fps target, gyro axes, haptics, button reach
 See `docs/MOBILE_BUILD.md`.
 
-## Phase 8 — QA & release readiness (NEXT)
+## Phase 8 — QA & release readiness ✅ (v0.8.0)
+- [x] Second independent code review: 13 defects, all fixed + regression tests (Floor 9 breakdown, stuck touch joystick, Floor 1 carry after Continue, Floor 5 spawn distance, dialog mouse capture, Memories loss, mother during dialogs, Daily violations, tank re-climb, blanked messages, photo memories, Ramesh in a column, respawning cassettes)
+- [x] End-to-end playthrough with real scene changes (title → G…8 → TRUTH ending), incl. a fall and quit/Continue
+- [x] Performance: static batching (−55% draw calls), cached corridor shell (rebuild 56→18 ms), retuned presets (FSR 1), Auto quality that adapts on slow GPUs — `docs/PERFORMANCE.md`
+- [x] Error sweep on both renderers; navmesh params snapped to grid; FSR only where supported; fades/awaits safe when a scene is freed; ending clears the save immediately
+- [x] Logging on all platforms + "Open log folder"; version 0.8.0 on the title screen
+- [x] Builds: Windows exe (`build_windows.cmd`, smoke-tested) and phone APK (`build_android.cmd`, arm64, 59 MB)
+- [x] `tests/test_phase8.gd` — 44 checks; all suites: 279 pass
+- [ ] Human playtest · phone test · release signing · store assets — see `docs/RELEASE_CHECKLIST.md`
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

@@ -107,6 +107,7 @@ func _partition(z: float, door_id: Variant) -> Node3D:
 		return null
 	var d: Node3D = kit.box(Vector3(1.2, 2.2, 0.12), Vector3(0, 1.1, z), kit.m.metal)
 	d.set_meta("prompt", "Sealed. Two plates must be held at once.")
+	d.set_meta("dynamic", true)
 	return d
 
 func _plate(id: String, p: Vector3) -> void:
@@ -120,6 +121,7 @@ func Mat_glow() -> Material:
 
 func _make_shadow() -> void:
 	shadow = Node3D.new(); add_child(shadow)
+	shadow.set_meta("dynamic", true)
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(0, 0, 0, 0.82); m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

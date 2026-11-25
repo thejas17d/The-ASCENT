@@ -8,6 +8,9 @@ Run from the project folder (Git Bash shown; in cmd use `"%USERPROFILE%\.godot\G
 | All floors G–8, stairwell, flow | `godot --headless --path . -s res://tests/test_floors.gd` | 85 | 85/85 pass |
 | Night Shift, NG+, voice notes, Memories, Daily, Floor 9, menu, endings | `godot --headless --path . -s res://tests/test_phase6.gd` | 31 | 31/31 pass |
 | Touch joystick/look/buttons, crouch toggle, gyro, haptics, 1K textures, settings, stretch | `godot --headless --path . -s res://tests/test_mobile.gd` | 28 | 28/28 pass |
+| Review-2 regressions + **end-to-end playthrough** (real scene changes: title → G…8 → ending, a fall, quit/Continue) | `godot --headless --path . -s res://tests/test_phase8.gd` | 44 | 44/44 pass |
+
+**Total: 279 checks, all passing (v0.8.0).** Performance: `tests/perf.gd` (see `docs/PERFORMANCE.md`).
 
 Mobile renderer screenshot with the touch overlay: `godot --rendering-method mobile --path . -s res://tests/mobile_shot.gd`.
 

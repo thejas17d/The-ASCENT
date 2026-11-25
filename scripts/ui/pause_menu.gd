@@ -54,7 +54,9 @@ func close() -> void:
 		_settings.queue_free(); _settings = null
 	_root.visible = false
 	get_tree().paused = false
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	var fl := get_parent()
+	var dialog_up: bool = fl != null and "hud" in fl and fl.hud != null and fl.hud.dialog_open()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if dialog_up else Input.MOUSE_MODE_CAPTURED
 
 func _open_settings() -> void:
 	_menu.visible = false

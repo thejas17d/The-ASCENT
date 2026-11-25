@@ -19,6 +19,7 @@ const Sfx := preload("res://scripts/systems/sfx.gd")
 const Director := preload("res://scripts/systems/event_director.gd")
 const Touch := preload("res://scripts/ui/touch_controls.gd")
 const Haptics := preload("res://scripts/systems/haptics.gd")
+const Batcher := preload("res://scripts/systems/batcher.gd")
 const DIYA_SECONDS := 40.0
 const DIYA_RADIUS := 3.0
 
@@ -38,6 +39,7 @@ var _heart: AudioStreamPlayer
 var _heart_t := 0.0
 var _dust: GPUParticles3D
 var touch: CanvasLayer
+var batched_meshes := 0
 var floor_index := -1             # set by each floor before setup_common()
 var rules: Dictionary = {}
 var exit_unlocked := false
@@ -47,6 +49,7 @@ var spawn_yaw := 0.0
 const Kit := preload("res://scripts/world/kit.gd")
 
 func setup_common() -> void:
+	batched_meshes = Batcher.batch(self)    # merge static level geometry (draw calls)
 	var we := WorldEnvironment.new(); we.environment = Graphics.make_environment()
 	add_child(we)
 	player = Player.new(); add_child(player)
@@ -83,6 +86,8 @@ func setup_common() -> void:
 	add_child(hum)
 	_make_dust()
 	Graphics.changed.connect(_on_graphics_changed)
+	Graphics.auto_lowered.connect(func(q): hud.message("Graphics lowered to %s for smoother play. (Settings → Graphics quality)" % Graphics.PRESETS[q], 4))
+	Graphics.begin_measure()
 	if not scales_own_lights():
 		for l in floor_lights():
 			if is_instance_valid(l):
@@ -327,7 +332,8 @@ func unlock_exit(msg := "Somewhere, a heavy lock turns.") -> void:
 	if exit_unlocked:
 		return
 	exit_unlocked = true
-	hud.message(msg, 3)
+	if msg != "":
+		hud.message(msg, 3)
 
 ## Climb: stairwell interlude, then the next floor.
 func complete_floor() -> void:
