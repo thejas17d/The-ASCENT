@@ -1,0 +1,9 @@
+[
+  {"id": "flicker",        "weight": 5, "cooldown": 20, "min_dread": 0,  "dread": 2,  "intensity": 1, "fake": false},
+  {"id": "footsteps",      "weight": 3, "cooldown": 40, "min_dread": 10, "dread": 5,  "intensity": 2, "fake": false},
+  {"id": "door_slam",      "weight": 2, "cooldown": 60, "min_dread": 20, "dread": 8,  "intensity": 3, "fake": false},
+  {"id": "phone_ring",     "weight": 2, "cooldown": 70, "min_dread": 15, "dread": 5,  "intensity": 2, "fake": false},
+  {"id": "whisper",        "weight": 2, "cooldown": 50, "min_dread": 35, "dread": 6,  "intensity": 2, "fake": false},
+  {"id": "fake_chalk",     "weight": 2, "cooldown": 90, "min_dread": 45, "dread": 4,  "intensity": 2, "fake": true},
+  {"id": "fake_figure",    "weight": 2, "cooldown": 80, "min_dread": 60, "dread": 10, "intensity": 3, "fake": true}
+]

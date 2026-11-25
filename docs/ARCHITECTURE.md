@@ -3,20 +3,23 @@ Everything is built from code + data so floors/anomalies/rules can be added with
 
 | Path | Role |
 |---|---|
-| `scenes/main.tscn` | Entry scene (one node + `scripts/main.gd`) |
-| `scripts/main.gd` | Floor 2 controller: pass loop, judgement, rules, knocking, dread, win |
-| `scripts/floors/corridor.gd` | Procedural corridor builder; `build(anomaly, streak, open_213, seed)` |
-| `scripts/player/player.gd` | First-person CharacterBody3D, flashlight, interact ray (`interacted` signal) |
-| `scripts/ui/hud.gd` | Prompt, messages, rule panel, dread vignette, fades |
-| `scripts/systems/sfx.gd` | Procedural placeholder audio (knock, hum, sting) |
-| `data/anomalies/*.json` | Anomaly pool per floor |
-| `data/floor_rules/*.json` | Rule boards (text, class true/false/incomplete, truth, clue) |
-| `tests/` | Headless logic tests + screenshot helper |
+| `scenes/menu.tscn` + `scripts/ui/menu.gd` | Title screen (main scene) |
+| `scripts/autoload/game_state.gd` | **GameState**: floor, checkpoint, inventory, choices, falls, settings, save/load, input map |
+| `scripts/autoload/dread.gd` | **Dread**: 0–100, `tick()`, `add()`, `breakdown` signal, tiers |
+| `scripts/floors/floor_base.gd` | **FloorBase**: player, HUD, director, audio, items, hiding, pickups, generic events. Hooks: `world_root`, `floor_lights`, `hide_spot`, `on_interact`, `on_breakdown`, `perform_floor_event` |
+| `scripts/floors/floor_02.gd` + `scenes/floor_02.tscn` | Floor 2 rules, anomaly loop, knocking, Room 213 |
+| `scripts/floors/corridor.gd` | Procedural corridor builder + `add_chalk/add_diya/add_pickup` |
+| `scripts/player/player.gd` | FP controller, battery, phone (cull layer 2), hiding, breath, `noise` |
+| `scripts/systems/event_director.gd` | Paranormal Event Director (reads `data/events/director.json`) |
+| `scripts/systems/sfx.gd` | Procedural placeholder audio |
+| `scripts/ui/hud.gd` | Prompt, messages, panel, dread vignette, status, breath bar, phone viewfinder |
+| `data/…` | anomalies, floor rules, director events |
+
+## Adding a floor
+Create `scripts/floors/floor_NN.gd` extending `FloorBase`, build geometry in `_ready()`, call `setup_common()`, implement the hooks, add the scene to `GameState.FLOOR_SCENES`.
+
+## Adding a director event
+Add an entry to `data/events/director.json`; generic ids are handled in `FloorBase.perform_event`, anything else goes to the floor's `perform_floor_event`. `fake: true` events must vanish within ~1 s (fairness rule: "what vanishes was never there").
 
 ## Adding an anomaly
-1. Add `{id, desc, dread}` to `data/anomalies/floor_02.json`.
-2. Handle the `id` in `corridor.gd::build()`.
-3. Run tests — every anomaly must visibly change the corridor or the test fails.
-
-## Planned refactor (before Floor 3)
-Split `main.gd` into autoloads: `GameState` (floor, choices, save), `DreadSystem`, `RuleSystem`, `EventDirector`, and a `Floor` base class each floor scene extends. Kept monolithic for now to prove the loop first.
+Add to `data/anomalies/floor_02.json`, handle the id in `corridor.gd::build()`, run tests.

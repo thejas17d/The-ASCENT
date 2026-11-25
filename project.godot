@@ -2,7 +2,7 @@ config_version=5
 
 [application]
 config/name="The Ascent"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.4", "Mobile")
 
 [display]
@@ -11,3 +11,8 @@ window/size/viewport_height=720
 
 [rendering]
 renderer/rendering_method="mobile"
+
+[autoload]
+
+GameState="*res://scripts/autoload/game_state.gd"
+Dread="*res://scripts/autoload/dread.gd"

@@ -13,6 +13,8 @@ const ROOM213_SLOT := 6    # left side, slot 6 normally labelled 214
 var room213_open := false
 var figure: Node3D
 var knock_doors: Array = []   # [StaticBody3D] index = door id
+var lights: Array = []        # OmniLight3D, for flicker events
+var hide_spot: Node3D         # where the player sits when hiding
 var _mats := {}
 var _rules: Array = []
 var _rng := RandomNumberGenerator.new()
@@ -33,6 +35,7 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 		remove_child(c)
 		c.queue_free()
 	knock_doors.clear()
+	lights.clear()
 	figure = null
 	room213_open = open_213
 	_rng.seed = seed_val if seed_val != 0 else randi()
@@ -102,6 +105,7 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 		l.omni_range = 6.5
 		l.position = lamp.position + Vector3(0, -0.3, 0)
 		add_child(l)
+		lights.append(l)
 
 	# paintings at slot boundaries
 	var paintings := [[2, -1, Color(0.15, 0.45, 0.45)], [5, 1, Color(0.6, 0.45, 0.15)], [8, -1, Color(0.45, 0.1, 0.12)]]
@@ -155,6 +159,18 @@ func build(anomaly: String, streak: int, open_213: bool, seed_val: int = 0) -> v
 	for k in streak:
 		tally += "|" if (k + 1) % 5 != 0 else "\\ "
 	_label(tally if tally != "" else " ", Vector3(HALF_W - 0.12, 1.6, 2.0), 1, Color(0.95, 0.95, 0.95), 64)
+	# camera-only clue: only the phone sees it (render layer 2)
+	if streak >= 2:
+		var ghost := _label("2 1 3", Vector3(-HALF_W + 0.14, 1.4, -SLOT_LEN * ROOM213_SLOT - 2), -1, Color(0.6, 1.0, 0.6), 72)
+		ghost.layers = 2
+	# hiding cupboard in the start lobby (end lobby is past the judgement line)
+	var cup := _box(Vector3(0.9, 2.2, 0.9), Vector3(HALF_W - 0.55, 1.1, 4.3), Color(0.28, 0.3, 0.32))
+	cup.set_meta("hide", true)
+	cup.set_meta("prompt", "Hide in cupboard")
+	hide_spot = Node3D.new()
+	hide_spot.position = Vector3(HALF_W - 0.55, 0.0, 4.3)
+	hide_spot.rotation.y = 0.0
+	add_child(hide_spot)
 	# end lobby sign and clue
 	_label("STAIRS ▲  FLOOR 3", Vector3(0, 2.4, -48.88), 0, Color(0.2, 0.9, 0.3), 36)
 	if streak >= 4:
@@ -224,3 +240,37 @@ func _box(size: Vector3, pos: Vector3, c: Color, collide := true, emissive := fa
 	body.add_child(mi)
 	add_child(body)
 	return body
+
+func add_pickup(kind: String, pos: Vector3) -> Node3D:
+	var col := {"battery": Color(0.9, 0.75, 0.1), "diya": Color(0.85, 0.4, 0.1), "chalk": Color(0.95, 0.95, 0.95)}
+	var b := _box(Vector3(0.18, 0.12, 0.12), pos, col.get(kind, Color.WHITE), true, true)
+	b.set_meta("pickup", kind)
+	b.set_meta("prompt", "Take " + kind)
+	return b
+
+func add_chalk(pos: Vector3, normal: Vector3) -> Label3D:
+	var l := Label3D.new()
+	l.text = "X"; l.font_size = 64; l.pixel_size = 0.004
+	l.modulate = Color(0.95, 0.95, 0.92)
+	add_child(l)
+	l.global_position = pos + normal * 0.02
+	if abs(normal.y) < 0.9:
+		l.look_at(l.global_position - normal, Vector3.UP)
+		l.rotate_object_local(Vector3.UP, PI)
+	else:
+		l.rotation.x = -PI / 2
+	return l
+
+func add_diya(pos: Vector3) -> Node3D:
+	var n := Node3D.new()
+	add_child(n)
+	n.global_position = Vector3(pos.x, 0.0, pos.z)
+	var cup := MeshInstance3D.new()
+	var cm := CylinderMesh.new(); cm.top_radius = 0.08; cm.bottom_radius = 0.05; cm.height = 0.05
+	cup.mesh = cm; cup.position.y = 0.025; cup.material_override = _mat(Color(0.5, 0.25, 0.1))
+	n.add_child(cup)
+	var l := OmniLight3D.new()
+	l.light_color = Color(1.0, 0.6, 0.25); l.light_energy = 1.6; l.omni_range = 3.0
+	l.position.y = 0.25
+	n.add_child(l)
+	return n

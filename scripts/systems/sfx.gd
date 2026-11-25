@@ -42,3 +42,50 @@ static func sting() -> AudioStreamWAV:
 		var f := 140.0 - t * 40.0
 		s[i] = (sin(TAU * f * t) + sin(TAU * f * 1.06 * t)) * 0.3 * exp(-t * 0.9)
 	return _wav(s)
+
+## Two soft footfalls (someone behind you).
+static func footsteps() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 1.4))
+	for start in [0.0, 0.55, 1.1]:
+		var o := int(start * RATE)
+		for i in int(RATE * 0.12):
+			var t := float(i) / RATE
+			s[o + i] += (sin(TAU * 60.0 * t) * 0.6 + randf_range(-1, 1) * 0.25) * exp(-t * 30.0)
+	return _wav(s)
+
+## Heavy door slam.
+static func slam() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 1.2))
+	for i in s.size():
+		var t := float(i) / RATE
+		s[i] = (sin(TAU * 55.0 * t) + randf_range(-1, 1) * 0.7) * exp(-t * 6.0) * 0.9
+	return _wav(s)
+
+## Breathy noise swell.
+static func whisper() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 1.6))
+	var lp := 0.0
+	for i in s.size():
+		var t := float(i) / RATE
+		lp = lp * 0.7 + randf_range(-1, 1) * 0.3
+		s[i] = lp * sin(PI * t / 1.6) * (0.6 + 0.4 * sin(TAU * 5.0 * t))
+	return _wav(s)
+
+## Old telephone bell, two rings.
+static func ring() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 3.0))
+	for i in s.size():
+		var t := float(i) / RATE
+		var on := fmod(t, 1.5) < 0.9
+		s[i] = (sin(TAU * 420.0 * t) * 0.5 + sin(TAU * 470.0 * t) * 0.5) * (0.35 if on else 0.0) * (1.0 if fmod(t * 25.0, 1.0) < 0.5 else 0.6)
+	return _wav(s)
+
+## Sharp inhale after holding breath too long.
+static func gasp() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 0.6))
+	var lp := 0.0
+	for i in s.size():
+		var t := float(i) / RATE
+		lp = lp * 0.5 + randf_range(-1, 1) * 0.5
+		s[i] = lp * sin(PI * t / 0.6) * 0.8
+	return _wav(s)
