@@ -13,7 +13,6 @@ const FIGURE_WATCH := 16.0     # the figure turns to face you inside this range
 
 var corridor: Node3D
 var anomalies: Array = []
-var rules: Dictionary = {}
 var required := 8
 var streak := 0
 var current := ""          # active anomaly id, "" = clean pass
@@ -34,10 +33,17 @@ func _ready() -> void:
 	for n in _load_json("res://data/notes/floor_02.json"):
 		notes[n.id] = n
 	required = int(rules.get("required_streak", 8))
+	floor_index = 2
 	corridor = Corridor.new(); add_child(corridor)
 	corridor.set_rules(rules.rules)
 	setup_common()
+	GameState.floor_num = 2
 	streak = int(GameState.checkpoint.get("streak", 0))
+	if GameState.solved_floor(2):
+		streak = required     # you already found 213; it is still there
+	if GameState.altered_level(2) > 0:
+		for l in corridor.lights:
+			l.light_energy *= 0.75
 	# only a brand-new floor gets a guaranteed clean first pass
 	_new_pass(streak == 0 and passes == 0 and not GameState.checkpoint.has("streak"))
 	hud.fade_to(0.0, 1.5)
@@ -74,10 +80,11 @@ func on_interact(t: Object) -> bool:
 	return false
 
 func on_breakdown() -> void:
-	Dread.reset(40.0)   # before saving, so a reload never resumes at 100
+	if busy:
+		Dread.reset(40.0)
+		return
 	streak = 0
-	_checkpoint()
-	_transition("BREAKDOWN. Your mind gives out.\n(Full game: you wake one floor below.)", 1)
+	fall_down("BREAKDOWN. Your mind gives out.")
 
 func perform_floor_event(id: String) -> bool:
 	if id == "fake_figure":
@@ -177,16 +184,10 @@ func _transition(msg: String, kind: int) -> void:
 	await hud.fade_to(0.0, 0.6)
 	busy = false
 
+## Room 213 is the way up: it opens onto the stairwell.
 func _win() -> void:
-	finished = true
-	player.input_enabled = false
-	GameState.floor_num = 3
-	GameState.checkpoint = {}
-	GameState.save_game()
-	await hud.fade_to(1.0, 2.0)
-	hud.message("ROOM 213 EXISTS.\nThe rule was a lie.   FLOOR 2 CLEARED in %d passes.\n\nFloor 3 — RECORDS — is under construction.\nReturning to the title screen…" % passes, 9999)
-	await get_tree().create_timer(6.0, false).timeout
-	get_tree().change_scene_to_file("res://scenes/menu.tscn")
+	hud.message("ROOM 213 EXISTS.  The rule was a lie.", 3)
+	complete_floor()
 
 # ---------------------------------------------------------------- per frame
 func _process(d: float) -> void:

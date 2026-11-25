@@ -1,0 +1,8 @@
+{"floor": 5, "title": "THE HUNT", "rules": [
+  {"id": "u_light", "text": "It hunts by light.", "class": "random",
+   "truth": "True on some nights: it is drawn to your torch and to the work lamps."},
+  {"id": "u_sound", "text": "It hunts by sound.", "class": "random",
+   "truth": "True on other nights: it is drawn to footsteps, puddles and falling metal."},
+  {"id": "u_false", "text": "One of these is false.", "class": "true",
+   "truth": "Exactly one of the first two is true each time you play. Watch what it goes to."}
+]}

@@ -19,6 +19,8 @@ var _slats: Control
 var _msg_t := 0.0
 var _tear_t := 0.0
 var _fade_tw: Tween
+var _dialog: PanelContainer
+signal dialog_done(result)
 
 func _ready() -> void:
 	# 1) post-process reads the 3D frame underneath it
@@ -171,3 +173,81 @@ func fade_to(a: float, secs := 0.8) -> void:
 
 func fade_alpha() -> float:
 	return _fade.color.a
+
+func dialog_open() -> bool:
+	return _dialog != null
+
+## Numeric keypad. Returns the entered string ("" if cancelled).
+func ask_code(title: String, length := 4) -> String:
+	_dialog = PanelContainer.new()
+	_dialog.theme = UiTheme.get_theme()
+	_dialog.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_dialog.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_dialog.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var v := VBoxContainer.new(); v.add_theme_constant_override("separation", 10)
+	_dialog.add_child(v)
+	var t := Label.new(); t.text = title; t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(t)
+	var edit := LineEdit.new(); edit.max_length = length; edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	edit.placeholder_text = "_ ".repeat(length).strip_edges()
+	edit.add_theme_font_size_override("font_size", 34)
+	edit.custom_minimum_size = Vector2(260, 56)
+	v.add_child(edit)
+	var grid := GridContainer.new(); grid.columns = 3
+	v.add_child(grid)
+	for k in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "OK"]:
+		var b := Button.new(); b.text = k; b.custom_minimum_size = Vector2(84, 48)
+		b.pressed.connect(func():
+			if k == "OK": _finish_dialog(edit.text)
+			elif k == "⌫": edit.text = edit.text.left(-1)
+			elif edit.text.length() < length: edit.text += k)
+		grid.add_child(b)
+	var cancel := Button.new(); cancel.text = "Step away"
+	cancel.pressed.connect(func(): _finish_dialog(""))
+	v.add_child(cancel)
+	edit.text_submitted.connect(func(s): _finish_dialog(s))
+	add_child(_dialog)
+	move_child(_dialog, get_child_count() - 2)   # under the fade
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	edit.grab_focus()
+	var r = await dialog_done
+	return str(r)
+
+## Choice between options. Disabled options are passed as {"text":…, "disabled":true}.
+## Returns the chosen index.
+func ask_choice(title: String, options: Array) -> int:
+	_dialog = PanelContainer.new()
+	_dialog.theme = UiTheme.get_theme()
+	_dialog.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_dialog.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_dialog.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_dialog.custom_minimum_size = Vector2(620, 0)
+	var v := VBoxContainer.new(); v.add_theme_constant_override("separation", 12)
+	_dialog.add_child(v)
+	var t := Label.new(); t.text = title; t.autowrap_mode = TextServer.AUTOWRAP_WORD
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(t)
+	for i in options.size():
+		var o = options[i]
+		var b := Button.new(); b.custom_minimum_size.y = 50
+		b.text = o if o is String else str(o.text)
+		b.disabled = o is Dictionary and o.get("disabled", false)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD
+		b.pressed.connect(func(): _finish_dialog(i))
+		v.add_child(b)
+	add_child(_dialog)
+	move_child(_dialog, get_child_count() - 2)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var r = await dialog_done
+	return int(r)
+
+func _finish_dialog(result) -> void:
+	if _dialog:
+		_dialog.queue_free()
+		_dialog = null
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	dialog_done.emit(result)
+
+## Tests / scripted flows can answer an open dialog directly.
+func answer_dialog(result) -> void:
+	_finish_dialog(result)

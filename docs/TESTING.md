@@ -3,8 +3,9 @@ Run from the project folder (Git Bash shown; in cmd use `"%USERPROFILE%\.godot\G
 
 | Suite | Command | Checks | Last run |
 |---|---|---|---|
-| Floor 2 + core systems | `godot --headless --path . -s res://tests/test_floor2.gd` | 67 | 67/67 pass |
+| Floor 2 + core systems | `godot --headless --path . -s res://tests/test_floor2.gd` | 68 | 68/68 pass |
 | Supervisor AI | `godot --headless --path . -s res://tests/test_supervisor.gd` | 23 | 23/23 pass |
+| All floors G–8, stairwell, flow | `godot --headless --path . -s res://tests/test_floors.gd` | 85 | 85/85 pass |
 
 Both back up and restore your real `user://save.json` / `settings.json`.
 
@@ -12,6 +13,8 @@ Both back up and restore your real `user://save.json` / `settings.json`.
 
 **Supervisor** covers: navmesh bake, patrol, sight + amber warning beat, walls block sight, hearing through shelves, crouch stealth, torch-beam detection, blind mode, catch, lose → search → return, learning + search priority, breath-holding vs learned spots, fair spawn.
 
-Screenshot helpers (windowed): `tests/shot.gd -- <quality 0-3> <tag>`, `tests/menu_shot.gd`, `tests/sup_shot.gd`; images land in `%APPDATA%/Godot/app_userdata/The Ascent/`.
+**All floors** plays each puzzle to completion through the floors' own methods and checks every rule's consequence (falls to the right floor, deaths restart the right floor, checkpoints restore), both endings, the Floor 9 unlock, stairwell story beats and floor-to-floor flow. Scene changes are intercepted via `GameState.test_mode`.
+
+Screenshot helpers (windowed): `tests/floor_shot.gd -- <g|stair|1|3|4|5|6|7|8>`, `tests/shot.gd -- <quality 0-3> <tag>`, `tests/menu_shot.gd`, `tests/sup_shot.gd`; images land in `%APPDATA%/Godot/app_userdata/The Ascent/`.
 
 Not yet tested: a real human playtest, touch devices, Android performance.

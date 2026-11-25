@@ -6,7 +6,16 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const SETTINGS_PATH := "user://settings.json"
 const ITEM_DEFAULTS := {"battery": 1, "chalk": 15, "diya": 2}
-const FLOOR_SCENES := {2: "res://scenes/floor_02.tscn"}
+const FLOOR_SCENES := {
+	0: "res://scenes/floor_g.tscn", 1: "res://scenes/floor_01.tscn", 2: "res://scenes/floor_02.tscn",
+	3: "res://scenes/floor_03.tscn", 4: "res://scenes/floor_04.tscn", 5: "res://scenes/floor_05.tscn",
+	6: "res://scenes/floor_06.tscn", 7: "res://scenes/floor_07.tscn", 8: "res://scenes/floor_08.tscn",
+}
+const STAIRWELL := "res://scenes/stairwell.tscn"
+const ENDING := "res://scenes/ending.tscn"
+const LETHAL_FROM := 5      # floors >= this kill; below, failure sends you down a floor
+const FLOOR_NAMES := ["RECEPTION", "THE OFFICE", "THE CORRIDOR", "RECORDS", "THE RESIDENCE",
+	"THE HUNT", "THE INVERSION", "THE COLLAPSE", "THE ROOF"]
 const DEFAULT_SETTINGS := {
 	"quality": -1,              # -1 = auto (High on desktop, Medium on mobile)
 	"fullscreen": false,
@@ -24,6 +33,14 @@ var items := {}
 var choices := {}           # "letter": "kept"/"burned", "workers": "freed"/"left"
 var falls := 0              # times sent down a floor (hidden Floor 9 needs 0)
 var collectibles: Array = []
+var altered := {}           # floor -> times you were sent back to it (adds anomalies)
+var deaths := 0
+var carry := ""             # puzzle item currently in hand (Floor 1)
+var stair_from := -1        # floor just completed (stairwell scene reads it)
+var unlocks := {}           # "floor9", "new_game_plus", endings seen
+var solved := {}            # floor -> true once its puzzle was completed
+var test_mode := false      # tests: record scene changes instead of performing them
+var last_scene_request := ""
 var settings := DEFAULT_SETTINGS.duplicate()
 var _applied_once := false
 
@@ -31,15 +48,21 @@ func _ready() -> void:
 	_setup_input()
 	_setup_audio_buses()
 	load_settings()
+	_load_unlocks()
 	new_game()
 
 func new_game() -> void:
-	floor_num = 2   # Ground/Floor 1 not built yet
+	floor_num = 0
 	checkpoint = {}
 	items = ITEM_DEFAULTS.duplicate()
 	choices = {}
 	falls = 0
+	deaths = 0
 	collectibles = []
+	altered = {}
+	solved = {}
+	carry = ""
+	stair_from = -1
 
 # ---------------------------------------------------------------- save
 func has_save() -> bool:
@@ -50,9 +73,9 @@ func floor_available(n: int) -> bool:
 
 func save_game() -> bool:
 	var data := {
-		"version": 1, "floor": floor_num, "checkpoint": checkpoint, "items": items,
-		"choices": choices, "falls": falls, "collectibles": collectibles,
-		"dread": Dread.value,
+		"version": 2, "floor": floor_num, "checkpoint": checkpoint, "items": items,
+		"choices": choices, "falls": falls, "deaths": deaths, "collectibles": collectibles,
+		"altered": altered, "solved": solved, "carry": carry, "dread": Dread.value, "unlocks": unlocks,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
@@ -78,6 +101,16 @@ func load_game() -> bool:
 		items[k] = int(src[k])
 	choices = _dict(data.get("choices"))
 	falls = int(data.get("falls", 0))
+	deaths = int(data.get("deaths", 0))
+	altered = {}
+	var alt := _dict(data.get("altered"))
+	for k in alt:
+		altered[int(k)] = int(alt[k])
+	carry = str(data.get("carry", ""))
+	solved = {}
+	for k in _dict(data.get("solved")):
+		solved[int(k)] = true
+	unlocks.merge(_dict(data.get("unlocks")), true)
 	var c = data.get("collectibles", [])
 	collectibles = c if typeof(c) == TYPE_ARRAY else []
 	Dread.reset(minf(float(data.get("dread", 0.0)), 70.0))
@@ -89,6 +122,14 @@ func _dict(v) -> Dictionary:
 func delete_save() -> void:
 	if has_save():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+
+## Unlocks (endings seen, Floor 9, New Game+) survive finished runs.
+func _load_unlocks() -> void:
+	if FileAccess.file_exists("user://unlocks.json"):
+		var f := FileAccess.open("user://unlocks.json", FileAccess.READ)
+		var d = JSON.parse_string(f.get_as_text()) if f else null
+		if typeof(d) == TYPE_DICTIONARY:
+			unlocks = d
 
 # ---------------------------------------------------------------- settings
 func load_settings() -> void:
@@ -144,7 +185,29 @@ func use_item(id: String, n := 1) -> bool:
 	return true
 
 func floor_scene() -> String:
-	return FLOOR_SCENES.get(floor_num, FLOOR_SCENES[2])
+	return FLOOR_SCENES.get(floor_num, FLOOR_SCENES[0])
+
+func floor_name(n: int) -> String:
+	return FLOOR_NAMES[n] if n >= 0 and n < FLOOR_NAMES.size() else "?"
+
+func floor_label(n: int) -> String:
+	return "G" if n == 0 else str(n)
+
+func solved_floor(n: int) -> bool:
+	return solved.has(n)
+
+func is_lethal(n: int) -> bool:
+	return n >= LETHAL_FROM
+
+func altered_level(n: int) -> int:
+	return int(altered.get(n, 0))
+
+## Every scene change goes through here so tests can intercept it.
+func go(scene: String) -> void:
+	last_scene_request = scene
+	if test_mode:
+		return
+	get_tree().change_scene_to_file(scene)
 
 # ---------------------------------------------------------------- setup
 ## Buses: Master <- SFX (corridor reverb) , Ambience.

@@ -21,6 +21,9 @@ static func get_stream(id: String) -> AudioStreamWAV:
 			"step_concrete": _cache[id] = step(0.6, 120.0, 0.04)
 			"heartbeat": _cache[id] = heartbeat()
 			"click": _cache[id] = click()
+			"splash": _cache[id] = splash()
+			"clang": _cache[id] = clang()
+			"rain": _cache[id] = rain()
 	return _cache[id]
 
 static func _wav(samples: PackedFloat32Array, loop := false) -> AudioStreamWAV:
@@ -139,3 +142,32 @@ static func click() -> AudioStreamWAV:
 		var t := float(i) / RATE
 		s[i] = randf_range(-1, 1) * exp(-t * 300.0) * 0.6 + sin(TAU * 2400.0 * t) * exp(-t * 400.0) * 0.3
 	return _wav(s)
+
+## Foot in a puddle.
+static func splash() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 0.45))
+	var lp := 0.0
+	for i in s.size():
+		var t := float(i) / RATE
+		lp = lp * 0.35 + randf_range(-1, 1) * 0.65
+		s[i] = lp * exp(-t * 9.0) * 0.7 * (1.0 + sin(TAU * 7.0 * t) * 0.3)
+	return _wav(s)
+
+## Loose sheet metal / a dropped bucket.
+static func clang() -> AudioStreamWAV:
+	var s := PackedFloat32Array(); s.resize(int(RATE * 1.4))
+	for i in s.size():
+		var t := float(i) / RATE
+		var ring := sin(TAU * 310.0 * t) * 0.35 + sin(TAU * 523.0 * t) * 0.25 + sin(TAU * 871.0 * t) * 0.18
+		s[i] = (ring * exp(-t * 3.5) + randf_range(-1, 1) * exp(-t * 40.0) * 0.6) * 0.8
+	return _wav(s)
+
+## Steady rain, loops.
+static func rain() -> AudioStreamWAV:
+	var n := RATE * 3
+	var s := PackedFloat32Array(); s.resize(n)
+	var lp := 0.0
+	for i in n:
+		lp = lp * 0.6 + randf_range(-1, 1) * 0.4
+		s[i] = lp * 0.35 + (randf_range(-1, 1) * 0.4 if randf() < 0.002 else 0.0)
+	return _wav(s, true)

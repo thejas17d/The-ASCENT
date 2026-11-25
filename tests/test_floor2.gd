@@ -22,6 +22,7 @@ func _initialize() -> void:
 	var save_bak := _backup(gs.SAVE_PATH)
 	var set_bak := _backup(gs.SETTINGS_PATH)
 	gs.new_game(); dread.reset(0)
+	gs.test_mode = true          # intercept scene changes (fall-down, stairwell)
 	gs.checkpoint = {}
 	var main = load("res://scenes/floor_02.tscn").instantiate()
 	root.add_child(main)
@@ -101,15 +102,19 @@ func _initialize() -> void:
 	check(gs.load_game() and gs.count("battery") == 1 and gs.checkpoint.is_empty(), "malformed save loads with defaults (review #8)")
 	FileAccess.open(gs.SAVE_PATH, FileAccess.WRITE).store_string("not json")
 	check(not gs.load_game(), "corrupt save is rejected, not crashed on")
-	# breakdown is checkpointed (review #6)
+	# breakdown: the building sends you down to Floor 1 (saved, counted once)
 	main.streak = 6; main._checkpoint(); main.busy = false
 	var falls_before: int = gs.falls
+	gs.last_scene_request = ""
 	dread.reset(0); dread.add(200)
 	await create_timer(3.0).timeout
 	gs.load_game()
-	check(int(gs.checkpoint.get("streak", -1)) == 0, "breakdown wipes the saved tally")
+	check(gs.floor_num == 1 and gs.last_scene_request == gs.FLOOR_SCENES[1], "breakdown sends you down to Floor 1 (saved)")
+	check(gs.altered_level(1) == 1, "the floor below is marked as changed")
 	check(gs.falls == falls_before + 1, "breakdown counts exactly one fall")
 	check(dread.value < 100, "breakdown resets dread (%.1f)" % dread.value)
+	main.busy = false; main.player.input_enabled = true
+	main.hud.fade_to(0.0, 0.01)
 
 	# ---------------------------------------------------------- items
 	gs.items.battery = 1

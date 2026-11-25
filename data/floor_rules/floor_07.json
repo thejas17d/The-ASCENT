@@ -1,0 +1,6 @@
+{"floor": 7, "title": "THE COLLAPSE", "rules": [
+  {"id": "c_it", "text": "Do not look at it.", "class": "true",
+   "truth": "Holding the figure on the platform in your view kills you. A rising tone warns you."},
+  {"id": "c_them", "text": "Do not look away from them.", "class": "true",
+   "truth": "The frozen workers move only while you aren't looking at them."}
+]}

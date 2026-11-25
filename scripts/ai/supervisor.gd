@@ -146,6 +146,17 @@ func deactivate() -> void:
 func state_name() -> String:
 	return NAMES[state]
 
+## Something happened at pos: a flickering lamp ("light") or a clatter ("sound").
+## It only reacts if it hunts by that sense — which is how players learn the true rule.
+func lure(pos: Vector3, kind: String) -> bool:
+	if not senses.get(kind, false) or state in [S.CHASE, S.ATTACK, S.DORMANT]:
+		return false
+	last_known = pos
+	awareness = max(awareness, float(cfg.investigate_at))
+	_set_state(S.INVESTIGATE)
+	_goal = Vector3.INF
+	return true
+
 ## The building remembers every hiding place you use.
 func note_player_hid(kind: String, seen: bool) -> void:
 	hide_memory[kind] = int(hide_memory.get(kind, 0)) + 1
@@ -205,6 +216,10 @@ func perceive() -> Dictionary:
 		if los and ((dist < rng and ang < float(cfg.fov_degrees) * 0.5) or dist < float(cfg.proximity_sense)):
 			res.seen = true
 			res.strength = clamp(1.0 - dist / rng, 0.1, 1.0)
+	# touch range: even a blind hunter knows when you are right next to it
+	if not res.seen and los and dist < float(cfg.proximity_sense) and not player.hiding:
+		res.seen = true
+		res.strength = 1.0
 	# sound
 	if senses.sound:
 		var hear: float = float(player.noise) * float(cfg.hearing_range)
@@ -212,7 +227,13 @@ func perceive() -> Dictionary:
 			hear *= float(cfg.hearing_through_walls_mult)
 		if dist < hear:
 			res.heard = true
-	# light: the torch beam pointed at it
+	# light (a): a lit torch anywhere in its field of view is a beacon — even when blind to shapes
+	if senses.light and player.light_on() and not player.hiding and los:
+		var fwd2 := -global_transform.basis.z
+		var flat2 := Vector3(to.x, 0, to.z).normalized()
+		if dist < float(cfg.sight_range_torch_on) and rad_to_deg(fwd2.angle_to(flat2)) < float(cfg.fov_degrees) * 0.5:
+			res.light = true
+	# light (b): the torch beam pointed at it
 	if senses.light and player.light_on() and not player.hiding:
 		var pf: Vector3 = -player.cam.global_transform.basis.z
 		var to_me: Vector3 = eye - player.cam.global_position
@@ -244,6 +265,8 @@ func _update_awareness(d: float, p: Dictionary) -> void:
 	if p.heard:
 		var floor_level := 0.75 if player.noise >= 0.9 else 0.5
 		awareness = max(awareness, floor_level)
+		if not senses.sight:
+			awareness += d * 1.2   # a blind hunter homes in on sound
 		# hearing is imprecise
 		last_known = player.global_position + Vector3(_rng.randf_range(-1.2, 1.2), 0, _rng.randf_range(-1.2, 1.2))
 		any = true
@@ -255,7 +278,7 @@ func _update_awareness(d: float, p: Dictionary) -> void:
 	awareness = clamp(awareness, 0.0, 1.5)
 
 func _think(d: float, p: Dictionary) -> void:
-	var direct: bool = p.seen or p.light
+	var direct: bool = p.seen or p.light or (not senses.sight and p.heard)
 	match state:
 		S.PATROL, S.RETURN:
 			# always give the player an amber "it noticed you" beat before a chase

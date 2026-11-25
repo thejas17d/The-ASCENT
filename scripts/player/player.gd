@@ -27,6 +27,7 @@ var is_running := false
 var is_crouching := false
 var shake := 0.0
 var input_enabled := true
+var ui_lock := false            # a keypad/choice dialog is open
 var battery := 100.0
 var phone_up := false
 var hiding := false
@@ -91,7 +92,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	if e is InputEventMouseButton and e.pressed:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	if not input_enabled:
+	if not _can_act():
 		return
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var s: float = SENS * GameState.settings.get("sensitivity", 1.0)
@@ -112,6 +113,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		chalk_requested.emit(ray.get_collision_point(), ray.get_collision_normal())
 	elif e.is_action_pressed("diya") and not hiding:
 		diya_requested.emit(global_position + (-global_transform.basis.z * 0.8))
+
+func _can_act() -> bool:
+	return input_enabled and not ui_lock
 
 func reload() -> bool:
 	var ok := battery < 100.0 and GameState.use_item("battery")
@@ -156,7 +160,7 @@ func _physics_process(d: float) -> void:
 		var unstable: bool = (battery < 15.0 or shake > 0.7) and not GameState.settings.get("reduced_flashing", false)
 		light.light_energy = 0.0 if battery <= 0.0 else (randf_range(0.8, 3.2) if unstable and randf() < 0.35 else 3.2)
 	# breath: after a gasp you must release Space before holding again
-	var want_hold := hiding and input_enabled and Input.is_action_pressed("breath")
+	var want_hold := hiding and _can_act() and Input.is_action_pressed("breath")
 	if not Input.is_action_pressed("breath"):
 		_breath_lock = false
 	holding_breath = want_hold and not _breath_lock and breath > 0.0
@@ -181,10 +185,10 @@ func _physics_process(d: float) -> void:
 	if not is_on_floor():
 		velocity.y -= 9.8 * d
 	var v := Vector2.ZERO
-	if input_enabled:
+	if _can_act():
 		v = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	is_crouching = input_enabled and Input.is_action_pressed("crouch")
-	is_running = input_enabled and not is_crouching and Input.is_action_pressed("run") and v.length() > 0.1
+	is_crouching = _can_act() and Input.is_action_pressed("crouch")
+	is_running = _can_act() and not is_crouching and Input.is_action_pressed("run") and v.length() > 0.1
 	var dir := (transform.basis * Vector3(v.x, 0, v.y)).normalized()
 	var sp := RUN if is_running else (CROUCH if is_crouching else WALK)
 	velocity.x = dir.x * sp

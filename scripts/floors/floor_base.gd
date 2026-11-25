@@ -20,8 +20,8 @@ const Director := preload("res://scripts/systems/event_director.gd")
 const DIYA_SECONDS := 40.0
 const DIYA_RADIUS := 3.0
 
-var player: CharacterBody3D
-var hud: CanvasLayer
+var player: Player
+var hud: Hud
 var pause_menu: CanvasLayer
 var director: Node
 var busy := false
@@ -35,6 +35,13 @@ var _step_i := 0
 var _heart: AudioStreamPlayer
 var _heart_t := 0.0
 var _dust: GPUParticles3D
+var floor_index := -1             # set by each floor before setup_common()
+var rules: Dictionary = {}
+var exit_unlocked := false
+var exit_hint := "Locked. Something on this floor still holds it shut."
+var spawn := Vector3.ZERO         # where you arrive / respawn
+var spawn_yaw := 0.0
+const Kit := preload("res://scripts/world/kit.gd")
 
 func setup_common() -> void:
 	var we := WorldEnvironment.new(); we.environment = Graphics.make_environment()
@@ -51,7 +58,7 @@ func setup_common() -> void:
 	pause_menu = Pause.new(); add_child(pause_menu)
 	director = Director.new(); director.floor = self; add_child(director)
 	Dread.breakdown.connect(_on_breakdown)
-	for k in ["knock", "footsteps", "slam", "whisper", "ring"]:
+	for k in ["knock", "footsteps", "slam", "whisper", "ring", "splash", "clang"]:
 		var p := AudioStreamPlayer3D.new(); p.stream = Sfx.get_stream(k)
 		p.unit_size = 6; p.bus = "SFX"; p.attenuation_filter_cutoff_hz = 6000
 		add_child(p); _sfx[k] = p
@@ -118,11 +125,16 @@ func subtitle(t: String, secs := 2.0) -> void:
 
 # ---------------------------------------------------------------- hooks
 func world_root() -> Node3D: return self
+func on_item_taken(_id: String, _node: Node3D) -> bool: return false
+func on_use(_id: String, _node: Node3D) -> void: pass
+func apply_checkpoint(_cp: Dictionary) -> void: pass
 func floor_lights() -> Array: return []
 func hide_spot() -> Node3D: return null
 func surface_at(_pos: Vector3) -> String: return "concrete"
 func on_interact(_t: Object) -> bool: return false
-func on_breakdown() -> void: pass
+## Default breakdown: sent down a floor (floors 1–4) or death (5–8).
+func on_breakdown() -> void:
+	fall_down("BREAKDOWN. Your mind gives out.")
 func perform_floor_event(_id: String) -> bool: return false
 func on_player_hid(_spot: Node3D) -> void: pass
 
@@ -130,7 +142,8 @@ func on_player_hid(_spot: Node3D) -> void: pass
 func _process(d: float) -> void:
 	if finished:
 		return
-	hud.set_prompt(player.prompt())
+	player.ui_lock = hud.dialog_open() or pause_menu.is_open()
+	hud.set_prompt("" if player.ui_lock else player.prompt())
 	hud.set_phone(player.phone_up)
 	hud.set_hiding(player.hiding)
 	hud.set_breath(player.breath, player.hiding)
@@ -187,6 +200,23 @@ func _on_interact(t: Object) -> void:
 		hud.message("Picked up " + kind + ".", 2)
 		t.queue_free()
 		return
+	if t.has_meta("item"):
+		var iid := str(t.get_meta("item"))
+		if not on_item_taken(iid, t):
+			if not GameState.collectibles.has(iid):
+				GameState.collectibles.append(iid)
+			hud.message("Taken: " + str(t.get_meta("prompt", "")).trim_prefix("Take "), 2)
+			t.queue_free()
+		return
+	if t.has_meta("stair_exit"):
+		if exit_unlocked:
+			complete_floor()
+		else:
+			hud.message(exit_hint, 3)
+		return
+	if t.has_meta("use"):
+		on_use(str(t.get_meta("use")), t)
+		return
 	if t.has_meta("hide"):
 		var spot: Node3D = t.get_meta("hide_spot") if t.has_meta("hide_spot") else hide_spot()
 		if spot:
@@ -194,7 +224,140 @@ func _on_interact(t: Object) -> void:
 			on_player_hid(spot)
 			hud.message(str(t.get_meta("hide_msg", "You squeeze inside. Hold [Space] to hold your breath.")), 3)
 			return
-	on_interact(t)
+	if on_interact(t):
+		return
+	if t.has_meta("board"):
+		show_rules()
+
+func load_floor_data(n: int) -> void:
+	floor_index = n
+	var path := "res://data/floor_rules/floor_%02d.json" % n
+	if FileAccess.file_exists(path):
+		rules = JSON.parse_string(FileAccess.open(path, FileAccess.READ).get_as_text())
+	var npath := "res://data/notes/floor_%02d.json" % n
+	if FileAccess.file_exists(npath):
+		for nd in JSON.parse_string(FileAccess.open(npath, FileAccess.READ).get_as_text()):
+			notes[nd.id] = nd
+
+func show_rules(extra := "") -> void:
+	var s := "RULES OF THE BUILDING\nREAD CAREFULLY.  THE BUILDING IS LISTENING.\n"
+	for r in rules.get("rules", []):
+		s += "\n•  " + str(r.text)
+	s += extra + "\n\n[E] close"
+	hud.show_panel(s)
+
+## Standard arrival: fade in, title card, checkpoint.
+func begin_floor() -> void:
+	player.teleport(spawn)
+	player.rotation.y = spawn_yaw
+	if not GameState.checkpoint.is_empty():
+		apply_checkpoint(GameState.checkpoint)
+	GameState.floor_num = floor_index
+	GameState.save_game()
+	hud.fade_to(0.0, 1.5)
+	var title := "FLOOR %s — %s" % [GameState.floor_label(floor_index), GameState.floor_name(floor_index)]
+	if GameState.altered_level(floor_index) > 0:
+		title += "\nIt is not the way you left it."
+	hud.message(title, 5)
+
+func unlock_exit(msg := "Somewhere, a heavy lock turns.") -> void:
+	if exit_unlocked:
+		return
+	exit_unlocked = true
+	hud.message(msg, 3)
+
+## Climb: stairwell interlude, then the next floor.
+func complete_floor() -> void:
+	if busy:
+		return
+	busy = true
+	finished = true
+	player.input_enabled = false
+	GameState.stair_from = floor_index
+	GameState.solved[floor_index] = true
+	GameState.floor_num = floor_index + 1
+	GameState.checkpoint = {}
+	GameState.carry = ""
+	GameState.save_game()
+	await hud.fade_to(1.0, 1.2)
+	GameState.go(GameState.STAIRWELL)
+
+## Failure on floors 1–4: the building sends you down a floor, which has changed.
+func fall_down(reason: String) -> void:
+	if busy:
+		return
+	if GameState.is_lethal(floor_index):
+		die(reason)
+		return
+	busy = true
+	player.input_enabled = false
+	_sfx.sting.play()
+	hud.glitch(1.6)
+	await hud.fade_to(1.0, 0.25)
+	hud.message(reason + "\nThe floor gives way beneath you.", 4)
+	GameState.falls += 1
+	Dread.reset(40.0)
+	var below: int = max(0, floor_index - 1)
+	GameState.altered[below] = GameState.altered_level(below) + 1
+	GameState.floor_num = below
+	GameState.checkpoint = {}
+	GameState.carry = ""
+	GameState.save_game()
+	await get_tree().create_timer(2.2, false).timeout
+	GameState.go(GameState.floor_scene())
+
+## Failure on floors 5–8: death; restart from the floor's last checkpoint.
+func die(reason: String) -> void:
+	if busy:
+		return
+	busy = true
+	player.input_enabled = false
+	_sfx.sting.play()
+	hud.glitch(2.0)
+	await hud.fade_to(1.0, 0.2)
+	hud.message(reason + "\n\nYOU DIED", 4)
+	GameState.deaths += 1
+	Dread.reset(30.0)
+	GameState.save_game()
+	await get_tree().create_timer(2.5, false).timeout
+	GameState.go(GameState.floor_scene())
+
+## Default chalk mark / diya for floors that build into themselves.
+func add_chalk(pos: Vector3, normal: Vector3) -> Label3D:
+	var l := Label3D.new()
+	l.text = "X"; l.font_size = 64; l.pixel_size = 0.004
+	l.modulate = Color(0.95, 0.95, 0.92); l.shaded = true
+	add_child(l)
+	l.global_position = pos + normal * 0.02
+	if abs(normal.y) < 0.9:
+		l.look_at(l.global_position - normal, Vector3.UP)
+		l.rotate_object_local(Vector3.UP, PI)
+	else:
+		l.rotation.x = -PI / 2
+	return l
+
+func add_diya(pos: Vector3) -> Node3D:
+	var n := Node3D.new()
+	add_child(n)
+	n.global_position = Vector3(pos.x, pos.y - 0.05 if pos.y > 0.5 else 0.0, pos.z)
+	n.global_position.y = player.global_position.y
+	var cm := CylinderMesh.new(); cm.top_radius = 0.08; cm.bottom_radius = 0.05; cm.height = 0.05
+	var cup := MeshInstance3D.new(); cup.mesh = cm; cup.position.y = 0.025
+	var cmat := StandardMaterial3D.new(); cmat.albedo_color = Color(0.55, 0.26, 0.12); cup.material_override = cmat
+	n.add_child(cup)
+	var flame := MeshInstance3D.new(); var fm := SphereMesh.new(); fm.radius = 0.015; fm.height = 0.05
+	flame.mesh = fm; flame.position.y = 0.08
+	var fmat := StandardMaterial3D.new(); fmat.emission_enabled = true; fmat.emission = Color(1, 0.55, 0.15)
+	fmat.emission_energy_multiplier = 6.0; fmat.albedo_color = Color(1, 0.55, 0.15); flame.material_override = fmat
+	n.add_child(flame)
+	var l := OmniLight3D.new()
+	l.light_color = Color(1.0, 0.58, 0.22); l.light_energy = 1.8; l.omni_range = 3.2
+	l.light_volumetric_fog_energy = 1.5; l.position.y = 0.2
+	n.add_child(l)
+	var tw := n.create_tween().set_loops()
+	tw.tween_property(l, "light_energy", 1.4, 0.18)
+	tw.tween_property(l, "light_energy", 2.0, 0.23)
+	return n
 
 func read_note(id: String, node: Object = null) -> void:
 	var n: Dictionary = notes.get(id, {"title": "Note", "text": "(illegible)"})
@@ -241,8 +404,7 @@ func _on_breakdown() -> void:
 		return
 	_sfx.sting.play()
 	hud.glitch(1.6)
-	GameState.falls += 1
-	on_breakdown()
+	on_breakdown()      # fall_down()/die() do the counting
 
 func _toggle_inventory() -> void:
 	if hud.panel_open():

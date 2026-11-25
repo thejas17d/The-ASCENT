@@ -1,0 +1,8 @@
+{"floor": 0, "title": "RECEPTION", "rules": [
+  {"id": "g_lift", "text": "Do not use the lift.", "class": "true",
+   "truth": "Calling the lift is a violation.", "clue": "The lift indicator is stuck on 8 and something breathes in the shaft."},
+  {"id": "g_register", "text": "Sign the visitor register.", "class": "true",
+   "truth": "Signing unlocks the security booth."},
+  {"id": "g_phone", "text": "Do not answer the phone.", "class": "incomplete",
+   "truth": "Answering costs dread but the voice gives the cabinet code hint.", "clue": "The guard's note says he always answered it."}
+]}

@@ -1,0 +1,9 @@
+{"floor": 3, "title": "RECORDS", "rules": [
+  {"id": "r_lights", "text": "Keep the lights on.", "class": "true",
+   "truth": "Power drains. Restore it at the fuse boxes. In the dark, the thing in the aisles hunts."},
+  {"id": "r_reads", "text": "Something reads the files when you are not looking.", "class": "true",
+   "truth": "It only reads while unobserved. Looking at it makes it stop and move."},
+  {"id": "r_finish", "text": "Do not let it finish.", "class": "incomplete",
+   "truth": "It is reading the 1998 incident report. Collect all six torn pages before it does.",
+   "clue": "Pages turn faster as it gets closer to the end."}
+]}

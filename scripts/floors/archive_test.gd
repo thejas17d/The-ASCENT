@@ -223,6 +223,10 @@ func _on_caught() -> void:
 	busy = false
 
 # ---------------------------------------------------------------- hooks
+func on_breakdown() -> void:
+	Dread.reset(40.0)   # dev level: just recover
+	hud.message("BREAKDOWN. (In the game this sends you down a floor.)", 3)
+
 func world_root() -> Node3D: return self
 func floor_lights() -> Array: return lamps
 func surface_at(_p: Vector3) -> String: return "concrete"

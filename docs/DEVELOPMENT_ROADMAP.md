@@ -43,8 +43,16 @@
 - [x] 23 AI tests
 - [ ] Rigged/animated character model (art)
 
-## Phase 5 — Floors (NEXT)
-G Reception · 1 Office · 3 Records (reuse archive) · 4 Residence · 5 Hunt · 6 Inversion · 7 Collapse · 8 Roof
-## Phase 6 — story, endings, hidden Floor 9
+## Phase 5 — Floors ✅ (all playable end to end; needs human playtest)
+- [x] Kit (`scripts/world/kit.gd`): rooms with openings, walls, lamps, boards, doors, lockers/desks (hide spots), items, notes, triggers
+- [x] Progression: stairwell interludes (story beat + voice memory + checkpoint), floor-down penalty with altered floors, death on 5–8, solved floors stay open
+- [x] HUD keypad + choice dialogs; carry-one-item; per-floor rules/notes data
+- [x] G Reception · 1 Office · 2 Corridor (integrated) · 3 Records · 4 Residence · 5 Hunt · 6 Inversion · 7 Collapse · 8 Roof
+- [x] Two endings (ESCAPE / TRUTH), Floor 9 unlock flag, New Game+ flag
+- [x] `tests/test_floors.gd` (85 checks) plays every floor's puzzle and every rule's consequence
+- [ ] Art pass per floor (props, characters), more anomalies on altered floors
+See `docs/FLOOR_DESIGN.md`.
+
+## Phase 6 — story polish, Floor 9 content, New Game+, Night Shift (NEXT)
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist
