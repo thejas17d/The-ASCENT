@@ -91,6 +91,7 @@ func setup_common() -> void:
 		amb.bus = "Ambience"; amb.volume_db = ambience_db(); amb.autoplay = true
 		add_child(amb)
 	_make_dust()
+	_capture_probes_without_torch()
 	Graphics.changed.connect(_on_graphics_changed)
 	Graphics.auto_lowered.connect(func(q): hud.message("Graphics lowered to %s for smoother play. (Settings → Graphics quality)" % Graphics.PRESETS[q], 4))
 	Graphics.begin_measure()
@@ -98,6 +99,19 @@ func setup_common() -> void:
 		for l in floor_lights():
 			if is_instance_valid(l):
 				l.light_energy *= GameState.light_scale()
+
+## Reflection probes render once on their first frame. Keep the player's torch
+## out of that capture (it would bake a bright spot into the room's reflections
+## and ambient). Invisible in play: floors open on a fade from black.
+func _capture_probes_without_torch() -> void:
+	if find_children("*", "ReflectionProbe", true, false).is_empty():
+		return
+	var was := player.light.visible
+	player.light.visible = false
+	for i in 3:
+		await get_tree().process_frame
+	if is_instance_valid(player) and not player.light.visible:
+		player.light.visible = was
 
 func _make_dust() -> void:
 	_dust = GPUParticles3D.new()

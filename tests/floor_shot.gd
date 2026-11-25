@@ -1,6 +1,7 @@
 extends SceneTree
-## Screenshots of a floor: godot --path . -s res://tests/floor_shot.gd -- <key>
-## Views are [position, yaw, pitch, torch]. Images: user://floor_<key>_<i>.png
+## Screenshots of a floor: godot --path . -s res://tests/floor_shot.gd -- <key> [quality 0-3, default 3]
+## Views are [position, yaw, pitch, torch]. Images: user://floor_<key>_<i>.png (q<N> suffix below Ultra)
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 const VIEWS := {
 	"g": ["res://scenes/floor_g.tscn", [[Vector3(0, 0.05, 4.6), 0.0, -0.05, false], [Vector3(-1.0, 0.05, 0.5), 0.75, -0.1, true], [Vector3(2.0, 0.05, -3.3), -1.57, -0.05, true]]],
 	"stair": ["res://scenes/stairwell.tscn", [[Vector3(0, 0.05, -0.8), 0.0, 0.35, true], [Vector3(0.3, 3.05, -6.6), 3.14, -0.3, true]]],
@@ -22,7 +23,8 @@ func _initialize() -> void:
 		gs.new_game("night")
 	gs.test_mode = true
 	gs.stair_from = 3
-	root.get_node("Graphics").apply(3)
+	var q := int(OS.get_cmdline_user_args()[1]) if OS.get_cmdline_user_args().size() > 1 else 3
+	root.get_node("Graphics").apply(q)
 	root.get_node("Graphics").auto_mode = false
 	var cfg: Array = VIEWS[key]
 	var f = load(cfg[0]).instantiate()
@@ -38,6 +40,9 @@ func _initialize() -> void:
 		if key == "gn":
 			f.player.set_phone(true)
 		for k in 40: await process_frame
-		root.get_texture().get_image().save_png("user://floor_%s_%d.png" % [key, i])
+		root.get_texture().get_image().save_png("user://floor_%s_%d%s.png" % [key, i, "" if q == 3 else "_q%d" % q])
 		i += 1
 	print("saved"); quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

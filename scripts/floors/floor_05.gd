@@ -8,6 +8,7 @@ extends FloorBase
 
 const Supervisor := preload("res://scripts/ai/supervisor.gd")
 const LURE_EVERY := 24.0
+const Skyline := preload("res://scripts/world/skyline.gd")
 
 var kit: Kit
 var nav: NavigationRegion3D
@@ -19,6 +20,8 @@ var hoist_on := false
 var _lure_t := 14.0
 var _lure_phase := 0
 var _rain: AudioStreamPlayer
+var _moon: DirectionalLight3D
+var _bolt_t := 9.0
 
 func _ready() -> void:
 	load_floor_data(5)
@@ -30,6 +33,7 @@ func _ready() -> void:
 	_build()
 	_bake()
 	setup_common()
+	_night()
 	spawn = Vector3(0, 0.05, 10.5)
 	_rain = AudioStreamPlayer.new(); _rain.stream = Sfx.get_stream("rain"); _rain.bus = "Ambience"
 	_rain.volume_db = -4; _rain.autoplay = true; add_child(_rain)
@@ -76,6 +80,7 @@ func _build() -> void:
 	kit.prop("old_tyre", Vector3(4.0, 0.3, 10.8), 1.2)
 	kit.prop("propane_tank", Vector3(13.4, 0, -6.2), 0.0)
 	kit.prop("portable_generator", Vector3(3.2, 0, -12.9), PI)
+	kit.prop("metal_toolbox", Vector3(2.1, 0, -13.2), 0.5, Vector3(0.42, 0, 0))
 	kit.prop("metal_jerrycan_green", Vector3(3.9, 0, -12.2), 0.5)
 	for k in 3:
 		kit.prop("plastic_crate_02", Vector3(-13.0, k * 0.25, 4.5), randf() * 0.3)
@@ -268,8 +273,38 @@ func surface_at(p: Vector3) -> String:
 			return "water"
 	return "concrete"
 
+## Open sides: the monsoon sky over Mumbai (sodium glow on the clouds), the
+## city's towers, and a low moon whose light rakes between the columns.
+func _night() -> void:
+	var env: Environment = Graphics.env
+	Skyline.night_sky(env, Color(0.012, 0.014, 0.024), Color(0.2, 0.1, 0.045), Color(0.012, 0.01, 0.01), 0.9)
+	env.ambient_light_color = Color(0.3, 0.32, 0.4)
+	env.volumetric_fog_albedo = Color(0.75, 0.8, 0.9)
+	_moon = Skyline.moon(self, Color(0.62, 0.7, 0.95), 0.45, Vector3(-0.3, 2.3, 0))   # shadows: moon_light.gd
+	Skyline.build(self, Vector3(0, 0, -1), 515, -22.0, Color(0.02, 0.022, 0.03), Color(1.0, 0.72, 0.38), 0.2)
+
+## Lightning: the slab flashes blue-white, thunder rolls in a beat later.
+func _lightning() -> void:
+	if _moon == null or GameState.settings.get("reduced_flashing", false):
+		return
+	var base := _moon.light_energy
+	var tw := create_tween()
+	tw.tween_property(_moon, "light_energy", 3.5, 0.04)
+	tw.tween_property(_moon, "light_energy", base, 0.12)
+	tw.tween_interval(0.08)
+	tw.tween_property(_moon, "light_energy", 2.4, 0.03)
+	tw.tween_property(_moon, "light_energy", base, 0.4)
+	get_tree().create_timer(randf_range(1.2, 2.6), false).timeout.connect(func():
+		if is_inside_tree():
+			play_at("boom", player.global_position + Vector3(28, 18, -20))
+			subtitle("(thunder)", 1.5))
+
 func _process(d: float) -> void:
 	super._process(d)
+	_bolt_t -= d
+	if _bolt_t <= 0.0:
+		_bolt_t = randf_range(16.0, 38.0)
+		_lightning()
 	if finished or busy:
 		return
 	hud.set_status("Fuses %d/3   ·   Torch %d%%   ·   Batteries %d" % [fuses.size(), int(player.battery), GameState.count("battery")])

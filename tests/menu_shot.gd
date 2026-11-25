@@ -1,5 +1,6 @@
 extends SceneTree
 ## Screenshots of the title screen, settings panel and pause menu.
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 func _initialize() -> void:
 	var menu = load("res://scenes/menu.tscn").instantiate()
 	root.add_child(menu)
@@ -17,3 +18,6 @@ func _initialize() -> void:
 	root.get_texture().get_image().save_png("user://ui_pause.png")
 	f.pause_menu.close()
 	print("saved"); quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

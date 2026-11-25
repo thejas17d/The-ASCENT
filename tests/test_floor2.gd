@@ -1,6 +1,7 @@
 extends SceneTree
 ## Headless logic tests:  godot --headless --path . -s res://tests/test_floor2.gd
 ## Backs up and restores the real save + settings files.
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 
 func check(cond: bool, name: String) -> void:
@@ -256,3 +257,6 @@ func _overlaps_doors(cor: Node) -> Array:
 			if hit != "":
 				bad.append(c.name)
 	return bad
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

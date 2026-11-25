@@ -2,6 +2,7 @@ extends SceneTree
 ## Plays every floor's puzzle through in code and checks each rule's consequence.
 ## godot --headless --path . -s res://tests/test_floors.gd
 ## Scene changes are intercepted (GameState.test_mode); real save files are restored.
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 var gs
 var dread
@@ -368,3 +369,6 @@ func t_progression() -> void:
 	await close_floor(f)
 	for n in range(0, 9):
 		check(ResourceLoader.exists(gs.FLOOR_SCENES[n]), "flow: floor %d scene exists" % n)
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

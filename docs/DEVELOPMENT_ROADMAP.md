@@ -90,6 +90,16 @@ See `docs/MOBILE_BUILD.md`.
 - [x] In-game Credits page (CC-BY authors, Rocketbox MIT notice, Godot licences) — `scripts/systems/credits.gd`; `docs/ASSET_LICENCES.md` rewritten
 - [x] Model cache released when a floor exits (VRAM no longer accumulates every model across the climb)
 - [x] `tests/test_assets.gd` — 46 checks; all suites: 325 pass
-- [ ] Perf re-profile on High/Ultra and the phone renderer (the run was stopped by low system memory) · screenshots · phone APK is now ≈ 229 MB (see `docs/MOBILE_BUILD.md`)
+- [x] Perf re-profiled on Medium (Forward+) and the phone renderer — see Phase 10
+
+## Phase 10 — visual overhaul ✅ (v0.10.0) — after the first hand playtest ("make it look much better")
+- [x] Lighting: a shadow-casting downlight under every fixture (pools of light; follows flickers/blackouts), volumetric fog on Medium (torch beams, light shafts), reflection probe per room (glossy terrazzo, bounce-like ambient), stronger bloom, flashlight cookie without banding, torch that trails the view
+- [x] Materials: per-texture normal tuning (the "cave rock" ceiling), new CC0 sets (terrazzo, painted plaster, plaster ceiling, glazed dado tiles, home tiles); rooms get skirting, cornices, door casings and optional tiled dado automatically
+- [x] Decay: generated grime, damp, mould and floor-dirt decals placed per room (`tools/gen_fx_textures.py`)
+- [x] Windows with Mumbai iron grilles, the night city outside (sky with sodium glow, instanced skyline), moonlight throwing the bars across the floor (G, 1, 4); Floor 5 gets a monsoon sky, raking moonlight and lightning (respects Reduced flashing)
+- [x] Primitives replaced: panelled doors with lever handles, steel stair doors with wired glass, slatted reception counter, analog 3:33 clock, floor directory, lift surround, CRT phosphor shader, fridge, digital clock, bulbs; 11 more CC0 models (plants, desk lamps, cabinets, shelving, radio, broom, bin bag, toolbox, picture)
+- [x] Budget kept: Medium ≤ 23.4 ms on the Intel UHD (SSAO moved to High; measured trade), heavy foliage excluded from shadows
+- [x] Every test and capture script now protects the real save/settings (`tests/user_files.gd`)
+- [x] `tests/test_visuals.gd` — 29 checks; all suites: 355 pass
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

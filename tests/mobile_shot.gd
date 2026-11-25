@@ -1,6 +1,7 @@
 extends SceneTree
 ## Screenshot with the Mobile renderer + touch overlay:
 ## godot --rendering-method mobile --path . -s res://tests/mobile_shot.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 func _initialize() -> void:
 	var gs = root.get_node("GameState")
 	await process_frame; await process_frame
@@ -27,3 +28,6 @@ func _initialize() -> void:
 	f.touch._release_move()
 	gs.settings.touch_controls = 0
 	print("saved"); quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

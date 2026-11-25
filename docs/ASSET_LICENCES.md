@@ -28,11 +28,16 @@ Source: https://polyhaven.com — "All assets are CC0: no attribution required, 
 | rusty_painted_metal | almirah, stair door, brackets |
 | plywood | notice board, shelving |
 | concrete_floor_worn_001 | archive / construction floors |
+| terrazzo_tiles | polished terrazzo: lobby, corridor lobbies (v0.10) |
+| painted_plaster_wall | main painted walls, institutional green / cream (v0.10) |
+| white_plaster_02 | ceilings (v0.10, replaces ceiling_interior in the kit) |
+| long_white_tiles | glazed tile dado band, kitchen splashback (v0.10) |
+| interior_tiles | Floor 4 home floor (v0.10) |
 
 Pages: `https://polyhaven.com/a/<id>`. Import: VRAM compressed + mipmaps (normal maps flagged), ETC2/ASTC for Android.
 
 ## 3D models — Poly Haven (CC0 1.0)
-glTF with 1K PBR textures in `assets/models/<id>/<id>_1k.gltf` (40 models, ~65 MB on disk).
+glTF with 1K PBR textures in `assets/models/<id>/<id>_1k.gltf` (51 models, ~89 MB on disk).
 Loaded by `scripts/world/props.gd` (fit-to-size, box collider); placed with `kit.prop(...)`.
 Every placement has a primitive fallback, so a missing model never breaks a floor.
 Pages: `https://polyhaven.com/a/<id>`.
@@ -58,6 +63,13 @@ Pages: `https://polyhaven.com/a/<id>`.
 | wooden_bookshelf_worn, painted_wooden_cabinet, standing_picture_frame_01, vintage_day_bed | Floor 4 |
 | cement_bag, Barrel_01, old_tyre, propane_tank, portable_generator, metal_jerrycan_green, plastic_crate_02, sledgehammer_01 | Floor 5 site; most also float on Floor 7 |
 | utility_box_01 | Floor 8 roof |
+| potted_plant_02, potted_plant_04 | lobby, office, home (`kit.plant`; no shadows — plant_02 is ~70k triangles) |
+| desk_lamp_arm_01, drawer_cabinet, steel_frame_shelves_01 | reception counter, office desks, office storage |
+| vintage_radio_transceiver | guard booth (Floor G) |
+| plastic_broom, trashbag | lobby janitor corner |
+| hanging_picture_frame_02 | lobby, Floor 4 dining room (its glass is replaced with clear glass in code) |
+| metal_toolbox | Floor 5 generator, roof |
+| lightbulb_01 | every hanging bulb fixture (`kit.lamp "bulb"`) |
 
 ## Characters and motion capture — Microsoft Rocketbox (MIT)
 Source: https://github.com/microsoft/Microsoft-Rocketbox — **Copyright (c) 2020 Microsoft**, MIT licence.
@@ -116,9 +128,11 @@ The Credits screen prints `Engine.get_license_text()`, `Engine.get_copyright_inf
 `Engine.get_license_info()` at runtime, so the engine's own notice and its third-party
 components (FreeType, ENet, mbedTLS, …) always match the exported engine version.
 
-## Generated in code (no licence needed)
-- Level geometry (walls, floors, stairs, doors, notice boards), stains, painting canvases, torch pattern
-- Post-processing shader — `shaders/post_fx.gdshader`
+## Generated for this game (no licence needed)
+- Level geometry (walls, floors, stairs, panelled doors, windows + grilles, skirting, cornices, clocks, signage)
+- `assets/fx/*.png` — torch cookie, grime / water-stain / mould / floor-dirt decals, made by `tools/gen_fx_textures.py` (numpy + PIL, fixed seeds)
+- The night skyline (`scripts/world/skyline.gd`), procedural sky, painting canvases
+- Shaders — `shaders/post_fx.gdshader`, `shaders/crt_screen.gdshader`
 
 ---
 **Record every future asset here:** file path, source URL, author, licence, what was changed —

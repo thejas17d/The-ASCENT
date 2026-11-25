@@ -1,5 +1,6 @@
 extends SceneTree
 ## Supervisor AI tests:  godot --headless --path . -s res://tests/test_supervisor.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 var lvl
 var sup
@@ -179,3 +180,6 @@ func _initialize() -> void:
 		FileAccess.open("user://save.json", FileAccess.WRITE).store_string(save_bak)
 	print("\n%d failure(s)" % fails)
 	quit(1 if fails > 0 else 0)
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

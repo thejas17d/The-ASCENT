@@ -7,6 +7,23 @@ extends RefCounted
 const TEX_2K := "res://assets/textures/%s/%s.jpg"
 const TEX_1K := "res://assets/textures_1k/%s/%s.jpg"   # phones and the Low preset
 static var _cache := {}
+## Per-texture tuning: some scans read far too bumpy as flat code-built walls
+## (the old ceiling looked like cave rock). normal = normal-map strength.
+const TUNE := {
+	"ceiling_interior": {"normal": 0.3},
+	"peeling_painted_wall": {"normal": 0.55},
+	"white_plaster_02": {"normal": 0.45},
+	"terrazzo_tiles": {"normal": 0.6},
+	"old_mosaic_floor": {"normal": 0.6},
+	"dirty_carpet": {"normal": 0.45},
+}
+
+## Generated effect textures (tools/gen_fx_textures.py): torch cookie, decals.
+static func fx(name: String) -> Texture2D:
+	var p := "res://assets/fx/%s.png" % name
+	if not _cache.has(p):
+		_cache[p] = load(p) if ResourceLoader.exists(p) else null
+	return _cache[p]
 
 ## 1K textures on phones (memory, download size) and on the Low preset.
 static func tex_pattern() -> String:
@@ -29,7 +46,7 @@ static func pbr(id: String, tile_m := 2.0, tint := Color.WHITE, rough := 1.0, me
 		m.albedo_texture = load(TEX % [id, "albedo"])
 		m.normal_enabled = true
 		m.normal_texture = load(TEX % [id, "normal"])
-		m.normal_scale = 1.0
+		m.normal_scale = float(TUNE.get(id, {}).get("normal", 1.0))
 		m.roughness_texture = load(TEX % [id, "rough"])
 		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
 		if ResourceLoader.exists(TEX % [id, "ao"]):

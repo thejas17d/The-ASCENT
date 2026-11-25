@@ -36,6 +36,7 @@ func _ready() -> void:
 	kit = Kit.new(self)
 	_build()
 	setup_common()
+	kit.outside(-13.5, Vector3(-0.38, -PI / 2 - 0.25, 0), 0.9, 404)   # moon through the living-room window
 	director.enabled = false          # this floor's horror is quiet and domestic
 	spawn = Vector3(4.0, 0.05, 1.0)
 	begin_floor()
@@ -48,8 +49,9 @@ func _ready() -> void:
 # ---------------------------------------------------------------- building
 func _build() -> void:
 	var wall: Material = kit.m.paint_warm
-	kit.room(Vector3(0, 0, -5), 14.0, 14.0, 3.0, wall, kit.m.mosaic, kit.m.ceiling,
-		[{"side": "s", "at": 4.0, "width": 1.1, "height": 2.2}])
+	kit.room(Vector3(0, 0, -5), 14.0, 14.0, 3.0, wall, kit.m.home_tile, kit.m.ceiling,
+		[{"side": "s", "at": 4.0, "width": 1.1, "height": 2.2},
+		 {"side": "w", "at": 4.5, "width": 1.6, "height": 2.4, "sill": 1.1}])
 	# interior walls (gaps are doorways)
 	_wall_x(-3.0, -7.0, 7.0, [[-4.0, 1.4], [4.0, 1.2]])
 	_wall_z(1.0, 2.0, -3.0, [[-0.5, 1.2]])
@@ -76,8 +78,10 @@ func _build() -> void:
 		deck = kit.box(Vector3(0.45, 0.12, 0.25), Vector3(-0.6, 0.62, -2.6), Color(0.12, 0.12, 0.12))
 	kit.box(Vector3(0.4, 0.56, 0.4), Vector3(-0.6, 0.28, -2.6), kit.m.wood)
 	deck.set_meta("use", "deck"); deck.set_meta("prompt", "Cassette player")
-	clock_label = kit.label("7:40", Vector3(-4.5, 2.25, -2.88), 0.0, Color(0.1, 0.08, 0.06), 64)
-	kit.cyl(0.3, 0.04, Vector3(-4.5, 2.25, -2.92), Color(0.92, 0.9, 0.82)).rotation.x = PI / 2
+	# a 90s digital wall clock: dark case, glowing red segments
+	clock_label = kit.label("7:40", Vector3(-4.5, 2.25, -2.88), 0.0, Color(1.0, 0.16, 0.08), 64, false)
+	kit.box(Vector3(0.72, 0.3, 0.05), Vector3(-4.5, 2.25, -2.925), Color(0.04, 0.035, 0.035), false)
+	kit.box(Vector3(0.6, 0.2, 0.004), Vector3(-4.5, 2.25, -2.899), Color(0.12, 0.01, 0.01), false)
 	kit.item("h_photo_beach", "photograph (beach)", Vector3(-6.4, 0.46, 0.4), "photo", Color(0.8, 0.75, 0.6))
 	# HALL (x 1..7, z 2..-3): front door / exit, shoe rack, rule board
 	kit.box(Vector3(1.2, 0.5, 0.35), Vector3(6.3, 0.25, 0.8), kit.m.wood)
@@ -103,8 +107,16 @@ func _build() -> void:
 	if kit.prop("pot_enamel_01", Vector3(5.2, 1.0, -6.6), 0.0, Vector3(0.34, 0, 0), false) == null:
 		kit.cyl(0.14, 0.25, Vector3(5.2, 1.13, -6.6), Color(0.75, 0.75, 0.78))             # pressure cooker
 	kit.prop("vintage_electric_kettle", Vector3(3.1, 0.94, -6.6), 0.5, Vector3.ZERO, false)
-	kit.box(Vector3(0.75, 1.8, 0.7), Vector3(6.5, 0.9, -3.6), Color(0.85, 0.85, 0.8))      # fridge
+	kit.box(Vector3(0.75, 1.8, 0.7), Vector3(6.5, 0.9, -3.6), kit.m.enamel)                 # fridge
+	kit.box(Vector3(0.02, 0.012, 0.66), Vector3(6.115, 1.28, -3.6), kit.m.black, false)      # freezer door line
+	for y in [1.52, 0.86]:
+		kit.box(Vector3(0.035, 0.32, 0.03), Vector3(6.1, y, -3.32), kit.m.chrome, false)     # handles
+	kit.box(Vector3(0.72, 0.06, 0.66), Vector3(6.5, 0.03, -3.6), kit.m.black, false)        # kick grille
+	kit.box(Vector3(6.0, 0.6, 0.012), Vector3(3.5, 1.24, -6.94), kit.m.dado, false)         # tiled splashback
 	kit.note("h_list", Vector3(6.12, 1.4, -3.6), 0.0).rotation = Vector3(PI / 2, -PI / 2, 0)
+	kit.plant(Vector3(-6.4, 0, -3.4), 2, 0.95)
+	kit.plant(Vector3(0.9, 0.94, -6.6), 4, 0.3)
+	kit.prop("hanging_picture_frame_02", Vector3(-6.97, 1.75, -5.0), PI / 2, Vector3(0.8, 0, 0), false)
 	# POOJA (x -7..-4, z -7..-12)
 	kit.box(Vector3(1.6, 0.9, 0.5), Vector3(-5.5, 0.45, -11.6), kit.m.wood)
 	kit.box(Vector3(1.6, 1.2, 0.1), Vector3(-5.5, 1.6, -11.9), Color(0.55, 0.12, 0.08))

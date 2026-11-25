@@ -1,6 +1,7 @@
 extends SceneTree
 ## Real assets: CC0 props, Rocketbox characters + mocap, recorded audio.
 ## godot --headless --path . -s res://tests/test_assets.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 
 func check(cond: bool, name: String) -> void:
@@ -122,3 +123,6 @@ func _initialize() -> void:
 	b.free()
 	print("\n%d failure(s)" % fails)
 	quit(1 if fails > 0 else 0)
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

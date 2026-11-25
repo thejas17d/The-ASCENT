@@ -1,6 +1,7 @@
 extends SceneTree
 ## Phase 6: Night Shift, New Game+, voice notes, Memories, Daily Corridor,
 ## Floor 9, title menu, endings.  godot --headless --path . -s res://tests/test_phase6.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 var gs
 var dread
@@ -68,7 +69,13 @@ func t_night() -> void:
 	check(is_equal_approx(dread.value, 13.0), "night: fear builds 30%% faster (%.1f)" % dread.value)
 	dread.reset(0)
 	var f = await open_scene("res://scenes/floor_g.tscn")
-	check(is_equal_approx(f.kit.lights[0].light_energy, 1.7 * 0.6), "night: floor lamps are dimmed (%.2f)" % f.kit.lights[0].light_energy)
+	var l0: Light3D = f.kit.lights[0]
+	var design: float = 1.7 * (f.kit.FILL if l0.has_meta("spot") else 1.0)
+	check(is_equal_approx(l0.light_energy, design * 0.6), "night: floor lamps are dimmed (%.2f)" % l0.light_energy)
+	if l0.has_meta("spot"):
+		await process_frame
+		var s: SpotLight3D = l0.get_meta("spot")
+		check(is_equal_approx(s.light_energy, l0.light_energy * s.ratio), "night: the lamp's downlight dims with it (%.2f)" % s.light_energy)
 	var lie: Label3D = find_label(f, "A LIE", 2)
 	check(f.rules.rules.size() == 4 and lie != null, "night: the board carries an extra rule, marked a lie on the camera layer only")
 	f.player.phone_up = true
@@ -174,3 +181,6 @@ func t_menu_and_ending() -> void:
 	await wait(0.2)
 	check(int(gs.unlocks.loops) == 2 and "second building" in str(e._lines[-1]), "ending: a second escape knows it's the second building")
 	e.queue_free(); await wait(0.1)
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

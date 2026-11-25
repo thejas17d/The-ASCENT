@@ -44,6 +44,9 @@ var _burst := 0.0               # temporary loud noise (gasp, knocking things ov
 var _burst_t := 0.0
 var _pre_hide: Transform3D
 var _flicker := 0.0
+var _torch_q := Quaternion.IDENTITY
+var _torch_init := false
+var _torch_wobble := Vector3.ZERO
 var touch_mode := false         # touch controls drive look; mouse-motion (emulated from touch) is ignored
 
 func _ready() -> void:
@@ -62,7 +65,8 @@ func _ready() -> void:
 	light.light_color = Color(0.95, 0.96, 1.0)
 	light.light_volumetric_fog_energy = 2.2
 	light.shadow_enabled = true; light.shadow_blur = 1.5
-	light.light_projector = _torch_pattern()
+	var cookie := preload("res://scripts/systems/mat_lib.gd").fx("torch_cookie")
+	light.light_projector = cookie if cookie else _torch_pattern()
 	light.position = Vector3(0.18, -0.12, 0)   # held low and to the right
 	cam.add_child(light)
 	ray = RayCast3D.new(); ray.target_position = Vector3(0, 0, -2.4)
@@ -224,8 +228,16 @@ func _physics_process(d: float) -> void:
 	cam.h_offset = randf_range(-1, 1) * shake * 0.012
 	cam.v_offset = randf_range(-1, 1) * shake * 0.012
 	# torch lags slightly behind the view and trembles with dread
-	light.rotation.z = randf_range(-1, 1) * shake * 0.03
-	light.rotation.x = lerp(light.rotation.x, sin(_bob) * 0.015, 0.2)
+	_torch_wobble = Vector3(lerp(_torch_wobble.x, sin(_bob) * 0.015, 0.2), 0.0, randf_range(-1, 1) * shake * 0.03)
+
+## The torch is held, not glued to the eyes: it trails the view slightly when
+## you turn (and trembles with dread), which makes the beam feel physical.
+func _process(d: float) -> void:
+	var target := cam.global_basis.get_rotation_quaternion()
+	if _torch_q == Quaternion.IDENTITY and not _torch_init:
+		_torch_q = target; _torch_init = true
+	_torch_q = _torch_q.slerp(target, 1.0 - exp(-16.0 * d))
+	light.global_basis = Basis(_torch_q) * Basis.from_euler(_torch_wobble)
 
 func prompt() -> String:
 	if hiding:

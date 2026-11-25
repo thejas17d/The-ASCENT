@@ -2,6 +2,7 @@ extends SceneTree
 ## Phase 7 mobile tests: touch joystick / look / buttons, crouch toggle,
 ## gyroscope, haptics, 1K textures, settings rows, UI stretch.
 ## godot --headless --path . -s res://tests/test_mobile.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 var gs
 
@@ -158,3 +159,6 @@ func _collect_labels(n: Node, out: Array) -> void:
 	for c in n.get_children():
 		if c is Label: out.append(c.text)
 		_collect_labels(c, out)
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

@@ -1,6 +1,7 @@
 extends SceneTree
 ## Renders screenshots: godot --path . -s res://tests/shot.gd -- <quality 0-3> <tag>
 ## Saves user://shot_<tag>_<view>.png for several camera views.
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 func _initialize() -> void:
 	await process_frame; await process_frame   # let autoload _ready run first
 	var args := OS.get_cmdline_user_args()
@@ -30,3 +31,6 @@ func _initialize() -> void:
 		for i in 45: await process_frame
 		root.get_texture().get_image().save_png("user://shot_%s_%s.png" % [tag, v])
 	print("saved"); quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

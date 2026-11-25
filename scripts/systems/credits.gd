@@ -5,7 +5,8 @@ extends RefCounted
 
 const GAME := """THE ASCENT
 
-Design, code, levels, procedural sound and shaders — made for this game.
+Design, code, levels, procedural sound, shaders, decals, the skyline
+and the torch pattern — made for this game.
 
 
 3D MODELS AND TEXTURES

@@ -91,6 +91,7 @@ func _build() -> void:
 	for p in [Vector3(6, 0, 6), Vector3(-9, 0, 4), Vector3(10, 0, -13), Vector3(-3, 0, -12)]:
 		kit.box(Vector3(1.6, 1.1, 1.0), p + Vector3(0, 0.55, 0), kit.m.metal_grey)
 	kit.prop("utility_box_01", Vector3(2.6, 0, 11.6), PI)
+	kit.prop("metal_toolbox", Vector3(1.7, 0, 11.5), 2.6, Vector3(0.42, 0, 0))
 	kit.prop("utility_box_01", Vector3(-2.7, 0, 11.6), PI)
 	kit.prop("Barrel_01", Vector3(12.5, 0, 8.5), 0.4)
 	kit.prop("metal_jerrycan_green", Vector3(12.1, 0, 9.2), 1.1)
@@ -146,42 +147,7 @@ func _sky() -> void:
 	kit.mesh(disk, Vector3(-60, 45, -120), preload("res://scripts/systems/mat_lib.gd").emissive(Color(0.9, 0.25, 0.18), 2.0), self)
 	# the "city": a painted skyline on four sides — silhouettes with lit windows.
 	# It is a backdrop, not a place (the chalk on the parapet says so).
-	var sil := StandardMaterial3D.new(); sil.albedo_color = Color(0.025, 0.015, 0.02); sil.roughness = 1.0
-	var mm := MultiMesh.new(); mm.transform_format = MultiMesh.TRANSFORM_3D; mm.use_colors = true
-	var q := QuadMesh.new(); q.size = Vector2(0.55, 0.75); mm.mesh = q
-	var rng := RandomNumberGenerator.new(); rng.seed = 333
-	var xf: Array = []; var cols: Array = []
-	for side in 4:
-		var yaw := side * PI / 2
-		var basis := Basis(Vector3.UP, yaw)
-		var x := -95.0
-		while x < 95.0:
-			var bw := rng.randf_range(6.0, 16.0)
-			var bh := rng.randf_range(8.0, 42.0)
-			var dist := rng.randf_range(62.0, 80.0)
-			var center := basis * Vector3(x + bw / 2, -10.0 + bh / 2, -dist)
-			var b := MeshInstance3D.new(); var bm := BoxMesh.new(); bm.size = Vector3(bw, bh, 4.0)
-			b.mesh = bm; b.material_override = sil; b.position = center; b.rotation.y = yaw
-			add_child(b)
-			# windows on the face toward the roof, in a loose grid
-			var wy := -9.0
-			while wy < -10.0 + bh - 1.5:
-				var wx := x + 0.8
-				while wx < x + bw - 0.8:
-					if rng.randf() < 0.22:
-						xf.append(Transform3D(basis, basis * Vector3(wx, wy, -dist + 2.05)))
-						cols.append(Color(1.0, 0.72, 0.38) * rng.randf_range(0.25, 0.8))
-					wx += 1.3
-				wy += 1.9
-			x += bw + rng.randf_range(0.5, 4.0)
-	mm.instance_count = xf.size()
-	for i in xf.size():
-		mm.set_instance_transform(i, xf[i]); mm.set_instance_color(i, cols[i])
-	var mmi := MultiMeshInstance3D.new(); mmi.multimesh = mm
-	var wm := StandardMaterial3D.new(); wm.vertex_color_use_as_albedo = true
-	wm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mmi.material_override = wm
-	add_child(mmi)
+	preload("res://scripts/world/skyline.gd").build(self, Vector3.ZERO, 333, -10.0, Color(0.025, 0.015, 0.02), Color(1.0, 0.72, 0.38))
 
 func _bake() -> void:
 	var nm := NavigationMesh.new()

@@ -1,5 +1,6 @@
 extends SceneTree
 ## Screenshots of the Supervisor in the archive test level (patrol + chase lamp).
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 func _initialize() -> void:
 	await process_frame; await process_frame   # let autoload _ready run first
 	root.get_node("Graphics").apply(3)
@@ -29,3 +30,6 @@ func _initialize() -> void:
 	for i in 30: await process_frame
 	root.get_texture().get_image().save_png("user://sup_archive.png")
 	print("saved"); quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

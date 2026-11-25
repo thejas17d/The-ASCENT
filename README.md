@@ -1,11 +1,11 @@
-# THE ASCENT — v0.9.0
+# THE ASCENT — v0.10.0
 First-person paranormal survival horror (Godot 4.4, GDScript, Mobile renderer).
 Climb Meridian Tower, Mumbai — every floor has rules, and some of them lie.
 
 ## Run
 - Double-click `play.cmd`, or in cmd: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64.exe" --path .`
 - Edit: open the folder in the Godot 4.4.1 editor (`~/.godot/Godot_v4.4.1-stable_win64.exe -e --path .`).
-- Tests: see `docs/TESTING.md` (325 headless checks incl. an end-to-end playthrough)
+- Tests: see `docs/TESTING.md` (355 headless checks incl. an end-to-end playthrough)
 - **Android**: plug in a phone with USB debugging and double-click `build_android.cmd` (see `docs/MOBILE_BUILD.md`)
 - **Windows build**: `build_windows.cmd` → `build/windows/TheAscent.exe`
 - Release status: `docs/RELEASE_CHECKLIST.md` · performance: `docs/PERFORMANCE.md`

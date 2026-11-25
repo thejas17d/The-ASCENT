@@ -3,6 +3,7 @@ extends SceneTree
 ##   godot --path . -s res://tests/perf.gd -- <quality 0-3>
 ##   godot --rendering-method mobile --path . -s res://tests/perf.gd -- 1
 ## Prints one row per scene: load ms, avg/max frame ms, draw calls, objects, primitives, VRAM.
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 const SCENES := [
 	["menu", "res://scenes/menu.tscn", Vector3.ZERO, 0.0],
 	["G", "res://scenes/floor_g.tscn", Vector3(0, 0.05, 4.6), 0.0],
@@ -74,3 +75,6 @@ func _initialize() -> void:
 	print("PERF corridor rebuild avg ms: %.1f" % ((Time.get_ticks_usec() - t1) / 5000.0))
 	f2.queue_free()
 	quit()
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

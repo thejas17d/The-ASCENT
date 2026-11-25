@@ -3,6 +3,7 @@ extends SceneTree
 ## playthrough with REAL scene changes (title → G … 8 → ending → title),
 ## including a fall and a quit/Continue mid-run.
 ## godot --headless --path . -s res://tests/test_phase8.gd
+var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 var fails := 0
 var gs
 var dread
@@ -255,3 +256,6 @@ func playthrough() -> void:
 	var memories: Array = gs.unlocks.get("memories", [])
 	check(memories.has("h_letter") and memories.has("id_mahadev") and memories.has("r_report"), "E2E: memories from the run are kept")
 	gs.test_mode = true
+
+func _finalize() -> void:
+	preload("res://tests/user_files.gd").restore(_user_files)

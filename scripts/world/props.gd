@@ -63,6 +63,7 @@ static func spawn(id: String, fit := Vector3.ZERO, collide := true) -> Node3D:
 	elif fit.x > 0:
 		s = Vector3.ONE * fit.x / max(box.size.x, 0.001)
 	model.scale = s
+	_fix_glass(model)
 	if not collide:
 		var holder := Node3D.new()
 		holder.add_child(model)
@@ -76,3 +77,24 @@ static func spawn(id: String, fit := Vector3.ZERO, collide := true) -> Node3D:
 	body.add_child(cs)
 	body.add_child(model)
 	return body
+
+static var _glass: StandardMaterial3D
+## glTF "glass" materials come through opaque (their base-colour texture has no
+## alpha), hiding what's behind them (picture artwork, bulb filaments). Swap in
+## one shared clear-glass material.
+static func _fix_glass(model: Node) -> void:
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh: Mesh = (mi as MeshInstance3D).mesh
+		if mesh == null:
+			continue
+		for k in mesh.get_surface_count():
+			var mat := mesh.surface_get_material(k)
+			if mat and "glass" in mat.resource_name.to_lower():
+				if _glass == null:
+					_glass = StandardMaterial3D.new()
+					_glass.resource_name = "clear_glass"
+					_glass.albedo_color = Color(0.85, 0.9, 0.9, 0.1)
+					_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					_glass.roughness = 0.04; _glass.metallic = 0.2
+					_glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+				(mi as MeshInstance3D).set_surface_override_material(k, _glass)

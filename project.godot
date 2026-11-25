@@ -6,7 +6,7 @@ config/name="The Ascent"
 run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.png"
-config/version="0.9.0"
+config/version="0.10.0"
 config/description="First-person paranormal survival horror. Climb Meridian Tower — every floor has rules, and some of them lie."
 
 [autoload]

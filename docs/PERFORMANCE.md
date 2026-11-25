@@ -15,19 +15,27 @@ Measured with `tests/perf.gd` (windowed, vsync off, 180 frames after a 60-frame 
 
 **Auto quality** (Settings → Graphics quality → Auto, the default): integrated GPUs (Intel/UHD/Iris/Radeon Graphics/Vega/Adreno/Mali…) start on **Medium**, discrete GPUs on **High**. During play, if any 4-second window averages slower than 25 ms (< 40 fps), it drops one preset, says so on screen, and remembers it (`auto_level`). Picking a preset by hand turns Auto off.
 
-## After Phase 9 (real models, rigged characters, recorded audio)
-Forward+, **Medium**, same PC (Intel UHD, 1600×900), per scene — avg / p95 ms:
+## v0.10 visual overhaul (measured on this PC: Intel UHD, 1600×900, Medium)
+New at Medium: volumetric fog (48³, torch beams + light shafts), moonlight with shadows through
+windows / open sides, per-room reflection probes, ~30–45 decals per room, downlights under every
+fixture, the skyline. To pay for it, **SSAO moved from Medium to High** — measured per feature
+on Floor G before the trade: SSAO 4.2 ms, moon shadows 3.7 → 1.2 ms (one cascade, 28 m, 2K map),
+fog 1.8, reflection probe 1.8, downlights 1.6 (their shadows are High+ only), decals ≈ 0.
+
+Forward+, **Medium**, avg ms per scene (one run):
 
 | menu | G | stair | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 16.7 / 17.8 | 17.3 / 18.7 | 15.3 / 16.3 | 18.3 / 19.2 | 15.4 / 16.5 | 17.0 / 18.0 | 17.9 / 19.3 | 16.9 / 19.1 | 16.6 / 21.2 | 18.5 / 20.4 | 14.4 / 15.6 | 9.3 / 11.1 |
+| 17.5 | 22.9 | 17.3 | 23.4 | 16.8 | 19.1 | 22.4 | 19.6 | 16.2 | 17.4 | 15.5 | 11.8 |
 
-So Medium stays at **≈ 55–65 fps** on this iGPU with the real assets (Phase 8 measured 20–22 ms across floors). Draw calls 158–479 (batching still applies to the shell; each model adds a few calls).
+All under Auto quality's 25 ms line (≈ 43–85 fps), but the margin on G / 1 / 4 is only ~2 ms:
+a slower iGPU would step down to Low there. p95 up to 27 ms.
 
-**VRAM** climbed during that run: 302 MB (menu) → 463 MB (Floor 5) → 817–843 MB (Floors 6–9), versus 271 → 295 → 475 MB in Phase 8. Part of the Floor 6 jump existed before; the rest was the prop loader's static cache keeping every model ever loaded resident. Fixed afterwards: leaving a floor now releases the cache (`Props.release()`, tested) — **not yet re-measured**.
+Phone renderer, Medium (two runs — this iGPU is noisy on it): 6.8–21.4 ms in the second run
+(G 18.2, 1 20.9, 4 21.4); the first run read 7.6–28.7 ms. VRAM 540–870 MB (Forward+ Medium).
+Not re-measured: High and Ultra (meant for discrete GPUs), real phones.
 
-**Not measured yet:** High (the partial run showed 37–57 ms on G–3, but it ran while the PC was almost out of RAM, so it is not trustworthy), Ultra and the phone renderer. The profile run was stopped by the system for low memory (Chrome was using ~4 GB). Re-run when RAM is free:
-`godot --path . -s res://tests/perf.gd -- 2` and `godot --rendering-method mobile --path . -s res://tests/perf.gd -- 1`.
+Re-run: `godot --path . -s res://tests/perf.gd -- 1` · `godot --rendering-method mobile --path . -s res://tests/perf.gd -- 1`.
 
 ## Draw calls
 | | Before | After |

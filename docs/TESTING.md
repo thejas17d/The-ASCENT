@@ -10,8 +10,9 @@ Run from the project folder (Git Bash shown; in cmd use `"%USERPROFILE%\.godot\G
 | Touch joystick/look/buttons, crouch toggle, gyro, haptics, 1K textures, settings, stretch | `godot --headless --path . -s res://tests/test_mobile.gd` | 28 | 28/28 pass |
 | Review-2 regressions + **end-to-end playthrough** (real scene changes: title → G…8 → ending, a fall, quit/Continue) | `godot --headless --path . -s res://tests/test_phase8.gd` | 44 | 44/44 pass |
 | Real assets: every CC0 model loads with a collider, fit-to-size, characters + mocap, floors use them, every recorded sound, wet puddle steps, model cache released per floor, in-game credits | `godot --headless --path . -s res://tests/test_assets.gd` | 46 | 46/46 pass |
+| Visuals (v0.10): room decals / probe / trim, windows with colliders, night sky + moon (none on Low), downlights follow their lamps, shadow budget per preset, torch cookie, analog clock, foliage without shadows, CRT shader, lightning vs Reduced flashing, material tuning, see-through model glass | `godot --headless --path . -s res://tests/test_visuals.gd` | 29 | 29/29 pass |
 
-**Total: 325 checks, all passing (v0.9.0).** Performance: `tests/perf.gd` (see `docs/PERFORMANCE.md`).
+**Total: 355 checks, all passing (v0.10.0).** Every suite and every screenshot/perf script backs up and restores your real `save.json`, `settings.json`, `unlocks.json` and `daily.json` (`tests/user_files.gd`) — running them never touches a real playthrough. Performance: `tests/perf.gd` (see `docs/PERFORMANCE.md`).
 
 Mobile renderer screenshot with the touch overlay: `godot --rendering-method mobile --path . -s res://tests/mobile_shot.gd`.
 

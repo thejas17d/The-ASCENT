@@ -88,10 +88,12 @@ func apply(q: int) -> void:
 		1:
 			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if forward_plus() else Viewport.SCALING_3D_MODE_BILINEAR
 			vp.scaling_3d_scale = 0.8
+			vp.fsr_sharpness = 0.1
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
 			vp.positional_shadow_atlas_size = 2048
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_LOW)
 			RenderingServer.environment_set_ssao_quality(RenderingServer.ENV_SSAO_QUALITY_VERY_LOW, true, 0.5, 2, 50.0, 300.0)
+			RenderingServer.environment_set_volumetric_fog_volume_size(48, 48)   # coarse but cheap: torch beams on iGPUs
 		2:
 			vp.scaling_3d_scale = 1.0
 			vp.use_taa = forward_plus()
@@ -108,6 +110,8 @@ func apply(q: int) -> void:
 			RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
 			RenderingServer.environment_set_ssao_quality(RenderingServer.ENV_SSAO_QUALITY_HIGH, false, 0.5, 2, 50.0, 300.0)
 			RenderingServer.environment_set_volumetric_fog_volume_size(128, 96)
+	# directional (moon) shadow map: the big cost on iGPUs, so it scales with the preset
+	RenderingServer.directional_shadow_atlas_set_size([1024, 2048, 4096, 4096][quality], true)
 	if env:
 		configure(env)
 	changed.emit()
@@ -125,7 +129,7 @@ func make_environment() -> Environment:
 	env.background_color = Color.BLACK
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.32, 0.3, 0.27)
-	env.ambient_light_energy = 0.18
+	env.ambient_light_energy = 0.14
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.tonemap_exposure = 1.05
 	# horror grade: a little desaturated, a little contrasty
@@ -137,8 +141,10 @@ func make_environment() -> Environment:
 
 func configure(e: Environment) -> void:
 	var fp := forward_plus()
-	var vol := fp and quality >= 2
-	e.ssao_enabled = fp and quality >= 1
+	var vol := fp and quality >= 1
+	# Medium spends its budget on moonlight shadows + volumetric fog instead of SSAO
+	# (measured on the Intel UHD: SSAO ~4 ms, more than both); High and Ultra keep it.
+	e.ssao_enabled = fp and quality >= 2
 	e.ssao_radius = 1.2
 	e.ssao_intensity = 2.2
 	e.ssao_detail = 0.6
@@ -147,18 +153,18 @@ func configure(e: Environment) -> void:
 	e.ssr_enabled = fp and quality >= 3
 	e.ssr_max_steps = 48
 	e.glow_enabled = quality >= 1
-	e.glow_intensity = 0.55
-	e.glow_bloom = 0.04
-	e.glow_hdr_threshold = 0.9
+	e.glow_intensity = 0.7
+	e.glow_bloom = 0.08
+	e.glow_hdr_threshold = 0.85
 	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	# volumetric fog makes torch beams and lamp cones visible
 	e.volumetric_fog_enabled = vol
-	e.volumetric_fog_density = 0.028
+	e.volumetric_fog_density = 0.055
 	e.volumetric_fog_albedo = Color(0.85, 0.82, 0.78)
 	e.volumetric_fog_anisotropy = 0.55
-	e.volumetric_fog_length = 48.0
+	e.volumetric_fog_length = 32.0 if quality <= 1 else 48.0
 	e.volumetric_fog_detail_spread = 2.0
-	e.volumetric_fog_ambient_inject = 0.15
+	e.volumetric_fog_ambient_inject = 0.04
 	e.volumetric_fog_temporal_reprojection_enabled = true
 	# cheap depth fog when volumetrics are off
 	e.fog_enabled = not vol

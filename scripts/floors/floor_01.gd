@@ -40,6 +40,7 @@ func _ready() -> void:
 		for c in chairs:
 			c.look_at(Vector3(0, 0, 0.6), Vector3.UP)   # every chair turned toward the entrance
 	setup_common()
+	kit.outside(-4.5, Vector3(-0.4, PI / 2 + 0.3, 0), 1.0, 202)   # moon through the east windows
 	spawn = Vector3(0, 0.05, 0.6)
 	begin_floor()
 	if GameState.solved_floor(1):
@@ -68,7 +69,10 @@ func apply_checkpoint(cp: Dictionary) -> void:
 
 func _build() -> void:
 	kit.room(Vector3(0, 0, -10), 20.0, 18.0, 3.2, kit.m.paint, kit.m.carpet_grey, kit.m.ceiling,
-		[{"side": "s", "at": 0.0, "width": 1.4, "height": 2.3}, {"side": "n", "at": 7.0, "width": 1.1, "height": 2.2}])
+		[{"side": "s", "at": 0.0, "width": 1.4, "height": 2.3}, {"side": "n", "at": 7.0, "width": 1.1, "height": 2.2},
+		 {"side": "e", "at": 5.5, "width": 1.8, "height": 2.5, "sill": 1.1},
+		 {"side": "e", "at": 1.0, "width": 1.8, "height": 2.5, "sill": 1.1},
+		 {"side": "e", "at": -3.5, "width": 1.8, "height": 2.5, "sill": 1.1}])
 	# entrance vestibule (z -0.8 .. 1.6) — "leaving" means stepping back in here
 	kit.box(Vector3(2.6, 0.2, 2.6), Vector3(0, -0.1, 0.4), kit.m.mosaic)
 	kit.box(Vector3(2.6, 0.2, 2.6), Vector3(0, 2.4, 0.4), kit.m.ceiling)
@@ -102,6 +106,8 @@ func _build() -> void:
 		scr.pixel_size = 0.0025
 		screens.append(scr)
 		kit.box(Vector3(0.45, 0.025, 0.16), p + Vector3(0.2, 0.8, 0.22), Color(0.65, 0.63, 0.56), false)
+		if i % 3 == 0:
+			kit.prop("desk_lamp_arm_01", p + Vector3(-0.6, 0.79, -0.25), 0.6, Vector3(0, 0.5, 0), false)
 		chairs.append(kit.chair(p + Vector3(0.1, 0, 0.6), 0.0))
 	# items on six desks
 	for k in 6:
@@ -122,6 +128,11 @@ func _build() -> void:
 		kit.prop("cardboard_box_01", b + Vector3(0, 0.17, 0), randf() * TAU)
 	kit.prop("cardboard_box_01", Vector3(9.3, 0.51, -16.9), 0.3)
 	kit.prop("korean_fire_extinguisher_01", Vector3(1.2, 0, -1.3), PI)
+	kit.prop("drawer_cabinet", Vector3(-8.7, 0, -18.7), 0.0, Vector3(0, 1.6, 0))
+	kit.prop("drawer_cabinet", Vector3(-7.4, 0, -18.7), 0.0, Vector3(0, 1.6, 0))
+	kit.prop("steel_frame_shelves_01", Vector3(9.72, 0, -15.0), -PI / 2, Vector3(0, 1.8, 0))
+	kit.plant(Vector3(9.3, 0, -1.6), 2, 1.0)
+	kit.plant(Vector3(-9.3, 0, -1.6), 4, 0.5)
 	kit.prop("fire_alarm", Vector3(-1.2, 1.5, -1.12), PI, Vector3.ZERO, false)
 	for x in [-5.0, -4.0, -3.0]:
 		chairs.append(kit.chair(Vector3(x, 0, -16.55), 0.0))
@@ -140,12 +151,12 @@ func _build() -> void:
 	kit.stair_exit(Vector3(7.0, 0, -19.03), 0.0, "STAIRS ▲  2")
 	exit_hint = "Locked. Every desk must be empty before you leave."
 	for p in [Vector3(-4, 3.2, -5.5), Vector3(4, 3.2, -5.5), Vector3(-4, 3.2, -12.5), Vector3(4, 3.2, -12.5), Vector3(-4, 3.2, -17.5), Vector3(7, 3.2, -17.5)]:
-		kit.lamp(p, "tube", Color(0.92, 0.95, 1.0), 1.05, 7.5)
+		kit.lamp(p, "tube", Color(0.92, 0.97, 0.95), 1.55, 8.0)
 
 func Mat_screen() -> Material:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(0.02, 0.06, 0.03); m.emission_enabled = true
-	m.emission = Color(0.05, 0.25, 0.08); m.emission_energy_multiplier = 1.2
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://shaders/crt_screen.gdshader")
+	m.set_shader_parameter("seed", randf() * 10.0)
 	return m
 
 # ---------------------------------------------------------------- puzzle

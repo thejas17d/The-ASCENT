@@ -53,10 +53,10 @@ var m_ply: Material
 
 func _init() -> void:
 	m_wallpaper = Mat.pbr("decrepit_wallpaper", 1.6, Color(1.0, 0.96, 0.9))
-	m_lobby_wall = Mat.pbr("peeling_painted_wall", 2.5, Color(0.72, 0.8, 0.78))
+	m_lobby_wall = Mat.pbr("painted_plaster_wall", 2.4, Color(0.7, 0.82, 0.74))
 	m_carpet = Mat.pbr("dirty_carpet", 1.8, Color(1.5, 0.95, 0.85))
-	m_mosaic = Mat.pbr("old_mosaic_floor", 1.6, Color.WHITE, 0.85)
-	m_ceiling = Mat.pbr("ceiling_interior", 2.4, Color(0.9, 0.88, 0.84))
+	m_mosaic = Mat.pbr("terrazzo_tiles", 1.5, Color(1.0, 0.97, 0.92), 0.55)
+	m_ceiling = Mat.pbr("white_plaster_02", 2.0, Color(0.86, 0.85, 0.81))
 	m_door = Mat.pbr("sapele_veneer", 1.1, Color(0.62, 0.42, 0.3), 0.75)
 	m_door_panel = Mat.pbr("sapele_veneer", 0.8, Color(0.5, 0.33, 0.24), 0.75)
 	m_trim = Mat.pbr("sapele_veneer", 0.6, Color(0.36, 0.24, 0.17), 0.8)
