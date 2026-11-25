@@ -1,6 +1,6 @@
 extends Control
 ## Title screen: a slow camera drift down the corridor behind the menu.
-## Continue / New Game / Settings / Quit.
+## Continue / New Game / Settings / Credits / Quit.
 
 const UiTheme := preload("res://scripts/ui/ui_theme.gd")
 const Settings := preload("res://scripts/ui/settings_panel.gd")
@@ -9,6 +9,7 @@ const POST := preload("res://shaders/post_fx.gdshader")
 const Sfx := preload("res://scripts/systems/sfx.gd")
 const Memories := preload("res://scripts/systems/memories.gd")
 const Leaderboard := preload("res://scripts/systems/leaderboard.gd")
+const Credits := preload("res://scripts/systems/credits.gd")
 
 var _cam: Camera3D
 var _box: VBoxContainer
@@ -52,6 +53,7 @@ func _ready() -> void:
 	_button("Memories  (%d / %d)" % [Memories.found().size(), Memories.all().size()], _open_memories)
 	_button("Test: The Supervisor", func(): get_tree().change_scene_to_file("res://scenes/dev/supervisor_test.tscn"))
 	_button("Settings", _open_settings)
+	_button("Credits", _open_credits)
 	_button("Quit", func(): get_tree().quit())
 	var ver := Label.new()
 	ver.text = "v" + str(ProjectSettings.get_setting("application/config/version", "dev"))
@@ -98,6 +100,9 @@ func _process(d: float) -> void:
 	_cam.position.z = 1.5 - fmod(_t * 0.6, 34.0)
 	_cam.rotation.y = sin(_t * 0.15) * 0.06
 	_cam.rotation.x = -0.03 + sin(_t * 0.11) * 0.02
+
+func _exit_tree() -> void:
+	preload("res://scripts/world/props.gd").release()
 
 func _button(text: String, cb: Callable) -> Button:
 	var b := Button.new(); b.text = text; b.custom_minimum_size = Vector2(360, 42)
@@ -176,6 +181,32 @@ func _open_memories() -> void:
 		panel.queue_free()
 		_box.visible = true)
 	v.add_child(back)
+
+## Every asset credit and licence notice (CC-BY, MIT, Godot) — required in the shipped game.
+func _open_credits() -> void:
+	_box.visible = false
+	var panel := PanelContainer.new(); panel.name = "Credits"
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 120; panel.offset_right = -120; panel.offset_top = 60; panel.offset_bottom = -60
+	add_child(panel)
+	var v := VBoxContainer.new(); panel.add_child(v)
+	var head := Label.new(); head.text = "CREDITS AND LICENCES"
+	head.add_theme_font_size_override("font_size", 28)
+	v.add_child(head)
+	var body := RichTextLabel.new()
+	body.bbcode_enabled = false
+	body.scroll_active = true
+	body.selection_enabled = true
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_font_size_override("normal_font_size", 17)
+	body.text = Credits.full_text()
+	v.add_child(body)
+	var back := Button.new(); back.text = "Back"
+	back.pressed.connect(func():
+		panel.queue_free()
+		_box.visible = true)
+	v.add_child(back)
+	back.call_deferred("grab_focus")
 
 func _new() -> void:
 	GameState.new_game()

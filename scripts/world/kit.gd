@@ -11,6 +11,7 @@ extends RefCounted
 ##   use        — floor-specific interactable id (handled by the floor)
 
 const Mat := preload("res://scripts/systems/mat_lib.gd")
+const Props := preload("res://scripts/world/props.gd")
 
 var root: Node3D
 var lights: Array = []
@@ -134,8 +135,12 @@ func lamp(pos: Vector3, kind := "tube", col := Color(1.0, 0.87, 0.68), energy :=
 			cyl(0.008, 0.2, pos, m.black)
 		"work":
 			cyl(0.02, 1.6, pos + Vector3(0, -0.8, 0), m.metal_grey)
-			box(Vector3(0.3, 0.22, 0.12), pos + Vector3(0, 0.0, 0), m.metal_grey, false)
-			box(Vector3(0.26, 0.18, 0.01), pos + Vector3(0, 0.0, -0.065), Mat.emissive(col, 4.0), false)
+			if Props.available("security_light"):
+				prop("security_light", pos + Vector3(0, 0.12, 0), 0.0, Vector3(0, 0.4, 0), false)
+				box(Vector3(0.2, 0.14, 0.01), pos + Vector3(0, -0.02, 0.17), Mat.emissive(col, 4.0), false)
+			else:
+				box(Vector3(0.3, 0.22, 0.12), pos + Vector3(0, 0.0, 0), m.metal_grey, false)
+				box(Vector3(0.26, 0.18, 0.01), pos + Vector3(0, 0.0, -0.065), Mat.emissive(col, 4.0), false)
 	var l := OmniLight3D.new()
 	l.light_color = col; l.light_energy = energy; l.omni_range = rng; l.omni_attenuation = 1.3
 	l.light_volumetric_fog_energy = 0.8
@@ -144,6 +149,18 @@ func lamp(pos: Vector3, kind := "tube", col := Color(1.0, 0.87, 0.68), energy :=
 	root.add_child(l)
 	lights.append(l)
 	return l
+
+# ---------------------------------------------------------------- real models
+## Place a CC0 glTF prop. Poly Haven models face +Z; yaw rotates that front.
+## Returns the StaticBody (collide) or holder node, or null if the model is missing.
+func prop(id: String, pos: Vector3, yaw := 0.0, fit := Vector3.ZERO, collide := true, parent: Node = null) -> Node3D:
+	var n := Props.spawn(id, fit, collide)
+	if n == null:
+		return null
+	n.position = pos
+	n.rotation.y = yaw
+	(parent if parent else root).add_child(n)
+	return n
 
 # ---------------------------------------------------------------- props
 func board(pos: Vector3, yaw: float, rules: Array, mirrored := false) -> Node3D:
@@ -167,9 +184,14 @@ func board(pos: Vector3, yaw: float, rules: Array, mirrored := false) -> Node3D:
 				lie.scale.x = -1.0
 	return b
 
-func chair(pos: Vector3, yaw: float) -> Node3D:
+func chair(pos: Vector3, yaw: float, style := "office") -> Node3D:
 	var n := Node3D.new(); n.position = pos; n.rotation.y = yaw
 	root.add_child(n)
+	var model_id := "SchoolChair_01" if style == "office" else "painted_wooden_chair_02"
+	if Props.available(model_id):
+		var fit := Vector3(0, 0.98, 0) if style == "office" else Vector3(0, 1.05, 0)
+		prop(model_id, Vector3.ZERO, PI, fit, false, n)    # model faces +Z, our chairs face -Z
+		return n
 	var legs := Mat.solid(Color(0.12, 0.12, 0.13), 0.4, 0.8)
 	box(Vector3(0.48, 0.05, 0.46), Vector3(0, 0.47, 0), m.ply, false, n)
 	box(Vector3(0.48, 0.5, 0.04), Vector3(0, 0.76, 0.21), m.ply, false, n)
@@ -189,10 +211,15 @@ func table(pos: Vector3, size: Vector3, mt: Variant = "wood") -> Node3D:
 func desk(pos: Vector3, yaw: float, hideable := true) -> Node3D:
 	var n := Node3D.new(); n.position = pos; n.rotation.y = yaw
 	root.add_child(n)
-	box(Vector3(1.6, 0.06, 0.8), Vector3(0, 0.76, 0), m.wood, true, n)
+	var top := box(Vector3(1.6, 0.06, 0.8), Vector3(0, 0.76, 0), m.wood, true, n)
+	var parts: Array = [top]
 	for x in [-0.75, 0.75]:
-		box(Vector3(0.06, 0.73, 0.75), Vector3(x, 0.365, 0), m.wood, true, n)
-	box(Vector3(1.44, 0.5, 0.03), Vector3(0, 0.48, -0.37), m.wood, true, n)   # modesty panel
+		parts.append(box(Vector3(0.06, 0.73, 0.75), Vector3(x, 0.365, 0), m.wood, true, n))
+	parts.append(box(Vector3(1.44, 0.5, 0.03), Vector3(0, 0.48, -0.37), m.wood, true, n))   # modesty panel
+	if Props.available("metal_office_desk"):
+		for p in parts:        # keep the colliders, show the real desk
+			(p.get_child(1) as MeshInstance3D).visible = false
+		prop("metal_office_desk", Vector3.ZERO, 0.0, Vector3(1.6, 0.79, 0.8), false, n)
 	if hideable:
 		var area := box(Vector3(1.4, 0.7, 0.66), Vector3(0, 0.35, 0), Color(0, 0, 0), true, n)
 		area.get_child(1).visible = false
@@ -246,6 +273,10 @@ func open_door(d: Node3D) -> void:
 		return
 	d.set_meta("opened", true)
 	d.remove_meta("prompt")
+	var creak := AudioStreamPlayer3D.new()
+	creak.stream = preload("res://scripts/systems/sfx.gd").get_stream("creak")
+	creak.bus = "SFX"; creak.unit_size = 5.0; creak.autoplay = true
+	d.add_child(creak)
 	(d.get_child(0) as CollisionShape3D).disabled = true
 	var hinge := d.global_transform.basis.x * -0.5
 	var tw := d.create_tween()

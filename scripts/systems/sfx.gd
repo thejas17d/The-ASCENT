@@ -1,12 +1,64 @@
 extends RefCounted
-## Procedural placeholder audio (no external assets). Replace with licensed
-## recordings later — see ASSET_LICENCES.md.
+## Sound bank. Recorded CC0/CC-BY sounds (assets/audio, see ASSET_LICENCES.md)
+## are used where we have them — several takes become one AudioStreamRandomizer
+## so every play varies in take and pitch. Anything without a recording falls
+## back to the procedural synth below (hum, phone ring, whisper, gasp…).
 const RATE := 22050
+const A := "res://assets/audio/"
+## id -> [folder or file, name filter, random pitch]
+const RECORDED := {
+	"step_carpet": ["steps/carpet", "footstep_carpet", 1.1],
+	"step_concrete": ["steps/concrete", "footstep_concrete", 1.1],
+	"step_tile": ["steps/tile", "steps_cb_tile", 1.08],
+	"step_water": ["steps/water", "steps_cb_water", 1.08],
+	"knock": ["doors/knocking.wav", "", 1.0],
+	"slam": ["doors/doorslam.wav", "", 1.05],
+	"creak": ["doors", "creak", 1.1],
+	"latch": ["doors/metalLatch.ogg", "", 1.05],
+	"clang": ["impacts", "metal_", 1.1],
+	"impact": ["impacts", "impactMetal_heavy", 1.1],
+	"splash": ["water", "splash_", 1.1],
+	"heartbeat": ["body/heartbeat_slow.wav", "", 1.0],
+	"sting": ["stingers", "Very_Bassy", 1.05],
+	"boom": ["misc/distant_boom.wav", "", 1.0],
+	"tape": ["misc/tape_open.wav", "", 1.0],
+	"rain": ["ambience/rain_1.ogg", "", 1.0],
+	"wind": ["loops/wind_loop.ogg", "", 1.0],
+	"drone_a": ["loops/ambient_horror.ogg", "", 1.0],
+	"drone_b": ["loops/abandoned_building.wav", "", 1.0],
+	"ui_click": ["ui", "click_", 1.05],
+}
 static var _cache := {}
 
-## Cached access: get("knock") builds once per run, so floors load without a hitch.
-static func get_stream(id: String) -> AudioStreamWAV:
+static func _recorded(id: String) -> AudioStream:
+	if not RECORDED.has(id):
+		return null
+	var spec: Array = RECORDED[id]
+	var path: String = A + spec[0]
+	if path.get_extension() != "":
+		return load(path) if ResourceLoader.exists(path) else null
+	var files: Array = []
+	for f in ResourceLoader.list_directory(path) if ClassDB.class_has_method("ResourceLoader", "list_directory") else DirAccess.get_files_at(path):
+		var fn := str(f).trim_suffix(".import")
+		if (fn.ends_with(".ogg") or fn.ends_with(".wav")) and str(spec[1]) in fn and not files.has(fn):
+			files.append(fn)
+	if files.is_empty():
+		return null
+	files.sort()
+	var r := AudioStreamRandomizer.new()
+	r.random_pitch = float(spec[2])
+	r.playback_mode = AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS
+	for f in files:
+		r.add_stream(-1, load(path + "/" + f))
+	return r
+
+## Cached access: get_stream("knock") resolves once per run, so floors load without a hitch.
+static func get_stream(id: String) -> AudioStream:
 	if not _cache.has(id):
+		var rec := _recorded(id)
+		if rec:
+			_cache[id] = rec
+			return rec
 		match id:
 			"knock": _cache[id] = knock()
 			"hum": _cache[id] = hum()
@@ -19,6 +71,7 @@ static func get_stream(id: String) -> AudioStreamWAV:
 			"step_carpet": _cache[id] = step(0.35, 70.0, 0.06)
 			"step_tile": _cache[id] = step(0.7, 180.0, 0.03)
 			"step_concrete": _cache[id] = step(0.6, 120.0, 0.04)
+			"step_water": _cache[id] = splash()
 			"heartbeat": _cache[id] = heartbeat()
 			"click": _cache[id] = click()
 			"splash": _cache[id] = splash()

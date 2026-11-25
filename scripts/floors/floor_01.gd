@@ -93,9 +93,12 @@ func _build() -> void:
 		kit.desk(p, 0.0, false)
 		kit.box(Vector3(1.8, 1.35, 0.05), p + Vector3(0, 0.675, -0.45), kit.m.carpet_grey)
 		kit.box(Vector3(0.05, 1.35, 1.2), p + Vector3(-0.92, 0.675, 0.12), kit.m.carpet_grey)
-		kit.box(Vector3(0.42, 0.36, 0.4), p + Vector3(0.25, 0.97, -0.15), Color(0.72, 0.7, 0.62), false)
-		kit.box(Vector3(0.34, 0.27, 0.01), p + Vector3(0.25, 0.98, 0.055), Mat_screen(), false)
-		var scr: Label3D = kit.label("", p + Vector3(0.25, 0.98, 0.062), 0.0, Color(0.5, 1.0, 0.55), 40, false)
+		var crt: Node3D = kit.prop("television_02", p + Vector3(0.25, 0.79, -0.2), 0.0, Vector3(0, 0.38, 0), false)
+		var sz := 0.03 if crt else 0.0      # real CRT: screen sits a little further forward
+		if crt == null:
+			kit.box(Vector3(0.42, 0.36, 0.4), p + Vector3(0.25, 0.97, -0.15), Color(0.72, 0.7, 0.62), false)
+		kit.box(Vector3(0.26, 0.2, 0.01), p + Vector3(0.24, 1.0, 0.055 - 0.08 + sz + (0.08 if crt == null else 0.0)), Mat_screen(), false)
+		var scr: Label3D = kit.label("", p + Vector3(0.24, 1.0, 0.062 - 0.08 + sz + (0.08 if crt == null else 0.0)), 0.0, Color(0.5, 1.0, 0.55), 40, false)
 		scr.pixel_size = 0.0025
 		screens.append(scr)
 		kit.box(Vector3(0.45, 0.025, 0.16), p + Vector3(0.2, 0.8, 0.22), Color(0.65, 0.63, 0.56), false)
@@ -109,7 +112,17 @@ func _build() -> void:
 	var ghost := kit.label("MAHADEV", DESK_POS[ITEM_DESKS[4]] + Vector3(-0.3, 1.75, -0.42), 0.0, Color(0.6, 1.0, 0.6), 64, false)
 	ghost.layers = 2
 	# meeting table with 8 chairs, 4 chairs along the east wall → 24 total
-	kit.table(Vector3(-4.0, 0, -17.4), Vector3(3.0, 0.74, 1.2))
+	if kit.prop("WoodenTable_01", Vector3(-4.0, 0, -17.4), 0.0, Vector3(3.0, 0.74, 1.2)) == null:
+		kit.table(Vector3(-4.0, 0, -17.4), Vector3(3.0, 0.74, 1.2))
+	# office clutter
+	for i in [1, 3, 5, 6, 8, 10]:
+		var dp: Vector3 = DESK_POS[i]
+		kit.prop("clipboard" if i % 2 == 1 else "stationery_supplies", dp + Vector3(0.6, 0.79, 0.05), randf() * 0.6, Vector3.ZERO, false)
+	for b in [Vector3(9.3, 0, -16.5), Vector3(9.3, 0, -17.4), Vector3(8.6, 0, -18.4)]:
+		kit.prop("cardboard_box_01", b + Vector3(0, 0.17, 0), randf() * TAU)
+	kit.prop("cardboard_box_01", Vector3(9.3, 0.51, -16.9), 0.3)
+	kit.prop("korean_fire_extinguisher_01", Vector3(1.2, 0, -1.3), PI)
+	kit.prop("fire_alarm", Vector3(-1.2, 1.5, -1.12), PI, Vector3.ZERO, false)
 	for x in [-5.0, -4.0, -3.0]:
 		chairs.append(kit.chair(Vector3(x, 0, -16.55), 0.0))
 		chairs.append(kit.chair(Vector3(x, 0, -18.25), PI))

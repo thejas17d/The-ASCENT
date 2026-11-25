@@ -68,11 +68,11 @@ func setup_common() -> void:
 		player.touch_mode = true
 	director = Director.new(); director.floor = self; add_child(director)
 	Dread.breakdown.connect(_on_breakdown)
-	for k in ["knock", "footsteps", "slam", "whisper", "ring", "splash", "clang"]:
+	for k in ["knock", "footsteps", "slam", "whisper", "ring", "splash", "clang", "creak", "boom", "latch", "impact"]:
 		var p := AudioStreamPlayer3D.new(); p.stream = Sfx.get_stream(k)
 		p.unit_size = 6; p.bus = "SFX"; p.attenuation_filter_cutoff_hz = 6000
 		add_child(p); _sfx[k] = p
-	for k in ["sting", "gasp", "click"]:
+	for k in ["sting", "gasp", "click", "tape"]:
 		var p := AudioStreamPlayer.new(); p.stream = Sfx.get_stream(k); p.bus = "SFX"
 		add_child(p); _sfx[k] = p
 	_sfx.click.volume_db = -10
@@ -81,9 +81,15 @@ func setup_common() -> void:
 		add_child(p); _steps.append(p)
 	_heart = AudioStreamPlayer.new(); _heart.stream = Sfx.get_stream("heartbeat"); _heart.bus = "SFX"
 	add_child(_heart)
-	var hum := AudioStreamPlayer.new(); hum.stream = Sfx.get_stream("hum"); hum.volume_db = -10
+	var hum := AudioStreamPlayer.new(); hum.stream = Sfx.get_stream("hum"); hum.volume_db = -14
 	hum.bus = "Ambience"; hum.autoplay = true
 	add_child(hum)
+	# recorded ambience bed per floor (room tone / drone / wind)
+	var bed := ambience_id()
+	if bed != "":
+		var amb := AudioStreamPlayer.new(); amb.stream = Sfx.get_stream(bed)
+		amb.bus = "Ambience"; amb.volume_db = ambience_db(); amb.autoplay = true
+		add_child(amb)
 	_make_dust()
 	Graphics.changed.connect(_on_graphics_changed)
 	Graphics.auto_lowered.connect(func(q): hud.message("Graphics lowered to %s for smoother play. (Settings → Graphics quality)" % Graphics.PRESETS[q], 4))
@@ -142,6 +148,11 @@ func subtitle(t: String, secs := 2.0) -> void:
 # ---------------------------------------------------------------- hooks
 func world_root() -> Node3D: return self
 func scales_own_lights() -> bool: return false
+## Ambient bed: abandoned-building room tone on the "inhabited" floors, a drone elsewhere.
+func ambience_id() -> String:
+	return {0: "drone_b", 1: "drone_b", 2: "drone_b", 3: "drone_a", 4: "drone_b", 5: "",
+		6: "drone_a", 7: "drone_a", 8: "wind", 9: "drone_a"}.get(floor_index, "drone_b")
+func ambience_db() -> float: return -16.0
 func on_item_taken(_id: String, _node: Node3D) -> bool: return false
 func on_use(_id: String, _node: Node3D) -> void: pass
 func apply_checkpoint(_cp: Dictionary) -> void: pass
@@ -156,6 +167,9 @@ func perform_floor_event(_id: String) -> bool: return false
 func on_player_hid(_spot: Node3D) -> void: pass
 
 # ---------------------------------------------------------------- per frame
+func _exit_tree() -> void:
+	preload("res://scripts/world/props.gd").release()
+
 func _process(d: float) -> void:
 	if finished:
 		return
@@ -187,14 +201,19 @@ func _process(d: float) -> void:
 		Dread.tick(d, not player.light_on(), in_safe_zone(), player.hiding)
 	player.shake = Dread.value / 100.0
 	hud.set_dread(Dread.value)
-	# heartbeat above 55 dread, faster as it climbs
-	_heart_t -= d
-	if Dread.value > 55.0 and _heart_t <= 0.0:
+	# heartbeat above 55 dread: louder and faster as it climbs
+	var hb := clampf((Dread.value - 55.0) / 45.0, 0.0, 1.0)
+	if Dread.value > 55.0:
 		_heart.volume_db = linear_to_db(clamp((Dread.value - 50.0) / 50.0, 0.05, 1.0))
-		_heart.play()
-		if Dread.value > 70.0:
+		_heart.pitch_scale = lerp(1.0, 1.7, hb)
+		if not _heart.playing:
+			_heart.play()
+		_heart_t -= d
+		if Dread.value > 70.0 and _heart_t <= 0.0:
 			Haptics.pulse("heartbeat", 50, clamp((Dread.value - 60.0) / 40.0, 0.2, 0.8))
-		_heart_t = lerp(1.1, 0.5, (Dread.value - 55.0) / 45.0)
+			_heart_t = lerp(1.0, 0.55, hb)
+	elif _heart.playing:
+		_heart.stop()
 
 ## Mother's voice notes: limited, each one calms you (Dread -35 over 6 s).
 var voice_playing := false

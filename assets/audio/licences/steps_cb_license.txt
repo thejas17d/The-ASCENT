@@ -1,0 +1,20 @@
+Footsteps on different surfaces - congusbongus - https://opengameart.org/content/footsteps-on-different-surfaces - CC-BY 3.0
+
+--- tile (assets/audio/steps/tile) ---
+Derived from footstep-concrete.wav by swuing
+http://www.freesound.org/people/swuing/sounds/38873/
+
+And Squeaky footstep.wav from ceberation
+https://freesound.org/people/ceberation/sounds/235524/
+
+http://creativecommons.org/licenses/by/3.0/
+
+--- water (assets/audio/steps/water) ---
+Derived from Water Footsteps by EminYILDIRIM
+https://freesound.org/people/EminYILDIRIM/sounds/608663/
+
+And footstep-concrete.wav by swuing
+http://www.freesound.org/people/swuing/sounds/38873/
+
+http://creativecommons.org/licenses/by/3.0/
+

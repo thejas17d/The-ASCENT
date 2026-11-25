@@ -58,14 +58,22 @@ func _build() -> void:
 	_wall_z(-4.0, -7.0, -12.0, [])
 	_wall_z(1.0, -7.0, -12.0, [])
 	# LIVING ROOM (x -7..1, z 2..-3)
-	kit.box(Vector3(0.9, 0.45, 2.4), Vector3(-6.4, 0.225, -0.5), kit.m.cloth)
-	kit.box(Vector3(0.25, 0.6, 2.4), Vector3(-6.8, 0.6, -0.5), kit.m.cloth)
-	kit.box(Vector3(1.0, 0.5, 0.5), Vector3(-2.5, 0.25, -2.6), kit.m.wood)            # TV stand
-	kit.box(Vector3(0.8, 0.62, 0.55), Vector3(-2.5, 0.81, -2.6), Color(0.15, 0.14, 0.13))
-	kit.box(Vector3(0.62, 0.46, 0.01), Vector3(-2.5, 0.83, -2.32), Mat_tv(), false)
-	tv_screen = kit.label("TEST SIGNAL\n· · · · ·", Vector3(-2.5, 0.83, -2.31), 0.0, Color(0.9, 0.9, 1.0), 30, false)
+	if kit.prop("Sofa_01", Vector3(-6.35, 0, -0.5), PI / 2, Vector3(2.3, 0, 0)) == null:
+		kit.box(Vector3(0.9, 0.45, 2.4), Vector3(-6.4, 0.225, -0.5), kit.m.cloth)
+		kit.box(Vector3(0.25, 0.6, 2.4), Vector3(-6.8, 0.6, -0.5), kit.m.cloth)
+	var tv_y := 0.83; var tv_z := -2.32
+	if kit.prop("side_table_01", Vector3(-2.5, 0, -2.62), 0.0, Vector3(0.75, 0.5, 0.5)) != null and kit.prop("Television_01", Vector3(-2.5, 0.5, -2.62), 0.0, Vector3(0.78, 0, 0), false) != null:
+		tv_y = 0.5 + 0.3; tv_z = -2.62 + 0.31
+		kit.box(Vector3(0.44, 0.32, 0.01), Vector3(-2.6, tv_y, tv_z), Mat_tv(), false)
+	else:
+		kit.box(Vector3(1.0, 0.5, 0.5), Vector3(-2.5, 0.25, -2.6), kit.m.wood)            # TV stand
+		kit.box(Vector3(0.8, 0.62, 0.55), Vector3(-2.5, 0.81, -2.6), Color(0.15, 0.14, 0.13))
+		kit.box(Vector3(0.62, 0.46, 0.01), Vector3(-2.5, 0.83, -2.32), Mat_tv(), false)
+	tv_screen = kit.label("TEST SIGNAL\n· · · · ·", Vector3(-2.6, tv_y, tv_z + 0.01), 0.0, Color(0.9, 0.9, 1.0), 30, false)
 	tv_screen.pixel_size = 0.002
-	var deck: Node3D = kit.box(Vector3(0.45, 0.12, 0.25), Vector3(-0.6, 0.62, -2.6), Color(0.12, 0.12, 0.12))
+	var deck: Node3D = kit.prop("portable_cassette_player", Vector3(-0.6, 0.62, -2.6), 0.0, Vector3(0.36, 0, 0))
+	if deck == null:
+		deck = kit.box(Vector3(0.45, 0.12, 0.25), Vector3(-0.6, 0.62, -2.6), Color(0.12, 0.12, 0.12))
 	kit.box(Vector3(0.4, 0.56, 0.4), Vector3(-0.6, 0.28, -2.6), kit.m.wood)
 	deck.set_meta("use", "deck"); deck.set_meta("prompt", "Cassette player")
 	clock_label = kit.label("7:40", Vector3(-4.5, 2.25, -2.88), 0.0, Color(0.1, 0.08, 0.06), 64)
@@ -77,28 +85,36 @@ func _build() -> void:
 	kit.stair_exit(Vector3(4.0, 0, 2.03), PI, "STAIRS ▲  5")
 	exit_hint = "Locked from outside. Dinner first. It's always dinner first."
 	# DINING (x -7..-1, z -3..-7): table, four chairs
-	kit.table(Vector3(-4.0, 0, -5.0), Vector3(2.0, 0.74, 1.0))
-	kit.chair(Vector3(-5.4, 0, -5.0), -PI / 2)    # Papa (head)
-	kit.chair(Vector3(-4.0, 0, -5.8), PI)         # Mummy
-	var mine: Node3D = kit.chair(Vector3(-4.0, 0, -4.2), 0.0)   # Arjun
+	if kit.prop("WoodenTable_01", Vector3(-4.0, 0, -5.0), 0.0, Vector3(2.0, 0.74, 1.0)) == null:
+		kit.table(Vector3(-4.0, 0, -5.0), Vector3(2.0, 0.74, 1.0))
+	kit.chair(Vector3(-5.4, 0, -5.0), -PI / 2, "wooden")    # Papa (head)
+	kit.chair(Vector3(-4.0, 0, -5.8), PI, "wooden")         # Mummy
+	var mine: Node3D = kit.chair(Vector3(-4.0, 0, -4.2), 0.0, "wooden")   # Arjun
 	var seat: Node3D = kit.box(Vector3(0.5, 0.5, 0.5), Vector3(-4.0, 0.25, -4.2), Color(0, 0, 0))
 	seat.get_child(1).visible = false
 	seat.set_meta("use", "sit"); seat.set_meta("prompt", "Your chair")
-	kit.chair(Vector3(-2.6, 0, -5.0), PI / 2)
+	kit.chair(Vector3(-2.6, 0, -5.0), PI / 2, "wooden")
 	for p in [Vector3(-4.0, 0.775, -4.6), Vector3(-4.0, 0.775, -5.4), Vector3(-4.75, 0.775, -5.0)]:
 		kit.cyl(0.13, 0.01, p, Color(0.85, 0.85, 0.82))
 	# KITCHEN (x -1..7, z -3..-7)
 	kit.box(Vector3(6.0, 0.9, 0.6), Vector3(3.5, 0.45, -6.65), kit.m.wood)
 	kit.box(Vector3(6.0, 0.04, 0.62), Vector3(3.5, 0.92, -6.65), Color(0.2, 0.22, 0.2))
 	kit.box(Vector3(0.6, 0.06, 0.4), Vector3(5.2, 0.97, -6.6), kit.m.metal_grey, false)   # stove
-	kit.cyl(0.14, 0.25, Vector3(5.2, 1.13, -6.6), Color(0.75, 0.75, 0.78))                 # pressure cooker
+	if kit.prop("pot_enamel_01", Vector3(5.2, 1.0, -6.6), 0.0, Vector3(0.34, 0, 0), false) == null:
+		kit.cyl(0.14, 0.25, Vector3(5.2, 1.13, -6.6), Color(0.75, 0.75, 0.78))             # pressure cooker
+	kit.prop("vintage_electric_kettle", Vector3(3.1, 0.94, -6.6), 0.5, Vector3.ZERO, false)
 	kit.box(Vector3(0.75, 1.8, 0.7), Vector3(6.5, 0.9, -3.6), Color(0.85, 0.85, 0.8))      # fridge
 	kit.note("h_list", Vector3(6.12, 1.4, -3.6), 0.0).rotation = Vector3(PI / 2, -PI / 2, 0)
 	# POOJA (x -7..-4, z -7..-12)
 	kit.box(Vector3(1.6, 0.9, 0.5), Vector3(-5.5, 0.45, -11.6), kit.m.wood)
 	kit.box(Vector3(1.6, 1.2, 0.1), Vector3(-5.5, 1.6, -11.9), Color(0.55, 0.12, 0.08))
-	for x in [-6.0, -5.5, -5.0]:
-		kit.cyl(0.07, 0.25, Vector3(x, 1.03, -11.7), kit.m.brass)
+	if kit.prop("brass_diya_lantern", Vector3(-5.5, 0.9, -11.6), 0.0, Vector3(0, 0.3, 0), false) != null:
+		kit.prop("brass_pot_01", Vector3(-6.05, 0.9, -11.6), 0.0, Vector3(0, 0.2, 0), false)
+		kit.prop("brass_vase_04", Vector3(-4.95, 0.9, -11.65), 0.0, Vector3(0, 0.22, 0), false)
+		kit.prop("brass_vase_04", Vector3(-5.2, 0.9, -11.75), 0.4, Vector3(0, 0.16, 0), false)
+	else:
+		for x in [-6.0, -5.5, -5.0]:
+			kit.cyl(0.07, 0.25, Vector3(x, 1.03, -11.7), kit.m.brass)
 	var diya := OmniLight3D.new(); diya.light_color = Color(1, 0.6, 0.25); diya.light_energy = 1.4
 	diya.omni_range = 3.5; diya.position = Vector3(-5.5, 1.2, -11.4); add_child(diya)
 	kit.lights.append(diya)
@@ -109,11 +125,19 @@ func _build() -> void:
 	kit.desk(Vector3(-1.5, 0, -11.2), 0.0, false)
 	kit.item("h_letter", "Papa's letter", Vector3(-1.4, 0.79, -11.1), "page", Color(0.92, 0.9, 0.82))
 	kit.box(Vector3(0.6, 1.4, 0.5), Vector3(-3.5, 0.7, -11.6), kit.m.metal_grey)
-	kit.chair(Vector3(-1.5, 0, -10.5), PI)
+	kit.prop("wooden_bookshelf_worn", Vector3(-3.65, 0, -8.6), PI / 2, Vector3(1.2, 2.0, 0.45))
+	kit.chair(Vector3(-1.5, 0, -10.5), PI, "wooden")
 	# BEDROOM (x 1..7, z -7..-12)
-	kit.box(Vector3(1.0, 0.45, 2.0), Vector3(6.3, 0.225, -10.6), kit.m.wood)
-	kit.box(Vector3(0.95, 0.12, 1.95), Vector3(6.3, 0.51, -10.6), Color(0.35, 0.45, 0.65))
-	kit.item("h_tape", "cassette tape", Vector3(6.0, 0.575, -9.9), "tape", Color(0.15, 0.15, 0.2))
+	if kit.prop("vintage_day_bed", Vector3(6.45, 0, -10.6), -PI / 2, Vector3(1.97, 1.0, 0.95)) != null:
+		kit.prop("side_table_01", Vector3(6.4, 0, -8.6), -PI / 2, Vector3(0.5, 0.55, 0.45))
+		kit.item("h_tape", "cassette tape", Vector3(6.4, 0.555, -8.6), "tape", Color(0.15, 0.15, 0.2))
+	else:
+		kit.box(Vector3(1.0, 0.45, 2.0), Vector3(6.3, 0.225, -10.6), kit.m.wood)
+		kit.box(Vector3(0.95, 0.12, 1.95), Vector3(6.3, 0.51, -10.6), Color(0.35, 0.45, 0.65))
+		kit.item("h_tape", "cassette tape", Vector3(6.0, 0.575, -9.9), "tape", Color(0.15, 0.15, 0.2))
+	kit.prop("painted_wooden_cabinet", Vector3(-0.6, 0, -11.65), 0.0, Vector3(1.0, 1.0, 0.5))
+	kit.prop("standing_picture_frame_01", Vector3(-0.85, 1.0, -11.6), 0.2, Vector3(0, 0.28, 0), false)
+	kit.prop("standing_picture_frame_01", Vector3(-0.4, 1.0, -11.62), -0.25, Vector3(0, 0.22, 0), false)
 	kit.box(Vector3(1.0, 0.75, 0.5), Vector3(2.0, 0.375, -11.6), kit.m.wood)
 	kit.item("h_photo_birthday", "photograph (birthday)", Vector3(2.0, 0.76, -11.5), "photo", Color(0.9, 0.85, 0.7))
 	# lights: warm household tubes and bulbs
@@ -135,15 +159,17 @@ func _clutter() -> void:
 	kit.label("JUNE\n1998", Vector3(0.4, 1.7, -2.9), 0.0, Color(0.6, 0.05, 0.05), 26)
 	kit.box(Vector3(2.6, 0.01, 1.8), Vector3(-4.0, 0.005, -0.6), Color(0.45, 0.12, 0.1), false)   # rug
 	kit.box(Vector3(2.2, 0.012, 1.4), Vector3(-4.0, 0.008, -0.6), Color(0.65, 0.45, 0.2), false)
-	for z in [-1.2, 0.2]:   # cushions
-		kit.box(Vector3(0.35, 0.3, 0.35), Vector3(-6.55, 0.6, z), Color(0.7, 0.5, 0.15), false)
+	if not Props_available("Sofa_01"):
+		for z in [-1.2, 0.2]:   # cushions for the primitive sofa
+			kit.box(Vector3(0.35, 0.3, 0.35), Vector3(-6.55, 0.6, z), Color(0.7, 0.5, 0.15), false)
 	var fan := Node3D.new(); fan.position = Vector3(-3.0, 2.6, -0.2); add_child(fan)   # ceiling fan
 	fan.set_meta("dynamic", true)
-	kit.cyl(0.1, 0.1, Vector3.ZERO, Color(0.4, 0.38, 0.33), fan)
-	for k in 3:
-		var b := kit.box(Vector3(0.8, 0.01, 0.12), Vector3(cos(k * TAU / 3) * 0.45, 0, sin(k * TAU / 3) * 0.45), Color(0.45, 0.42, 0.36), false, fan)
-		b.rotation.y = -k * TAU / 3
-	kit.cyl(0.012, 0.4, Vector3(-3.0, 2.8, -0.2), kit.m.black)
+	if kit.prop("ceiling_fan", Vector3(0, 0.4, 0), 0.0, Vector3(1.3, 0, 0), false, fan) == null:
+		kit.cyl(0.1, 0.1, Vector3.ZERO, Color(0.4, 0.38, 0.33), fan)
+		for k in 3:
+			var b := kit.box(Vector3(0.8, 0.01, 0.12), Vector3(cos(k * TAU / 3) * 0.45, 0, sin(k * TAU / 3) * 0.45), Color(0.45, 0.42, 0.36), false, fan)
+			b.rotation.y = -k * TAU / 3
+		kit.cyl(0.012, 0.4, Vector3(-3.0, 2.8, -0.2), kit.m.black)
 	var tw := fan.create_tween().set_loops()
 	tw.tween_property(fan, "rotation:y", TAU, 2.5).from(0.0)
 	kit.box(Vector3(1.4, 0.04, 0.25), Vector3(2.5, 1.7, -6.85), kit.m.wood, false)   # utensil rack
@@ -189,10 +215,21 @@ func _seg(c: Vector3, s: Vector3, lintel_from := 0.0) -> void:
 	else:
 		kit.box(Vector3(w, 3.0, d), c + Vector3(0, 1.5, 0), kit.m.paint_warm)
 
+var _mother_avatar: Node3D
+
 func _build_mother() -> void:
 	mother = Node3D.new(); add_child(mother)
 	mother.set_meta("dynamic", true)
 	mother.position = _mother_path[0]
+	var C := preload("res://scripts/world/characters.gd")
+	_mother_avatar = C.spawn("Female_Adult_02", {"idle": "f_idle_neutral_01", "walk": "f_walk_neutral_01"},
+		{"height": 1.6, "faceless": true, "skin": Color(0.47, 0.34, 0.26)})
+	if _mother_avatar:
+		_mother_avatar.rotation.y = PI
+		mother.add_child(_mother_avatar)
+		C.play(_mother_avatar, "idle")
+		_mother_head = Node3D.new(); _mother_head.position = Vector3(0, 1.5, 0); mother.add_child(_mother_head)
+		return
 	var saree := Mat_solid(Color(0.55, 0.08, 0.08), 0.85)
 	var skin := Mat_solid(Color(0.42, 0.3, 0.22), 0.7)
 	var skirt := CylinderMesh.new(); skirt.top_radius = 0.17; skirt.bottom_radius = 0.38; skirt.height = 1.05
@@ -208,6 +245,9 @@ func _build_mother() -> void:
 	for x in [-0.2, 0.2]:
 		var arm := CapsuleMesh.new(); arm.radius = 0.045; arm.height = 0.6
 		kit.mesh(arm, Vector3(x, 1.2, 0), skin, mother)
+
+func Props_available(id: String) -> bool:
+	return preload("res://scripts/world/props.gd").available(id)
 
 func Mat_solid(c: Color, r: float) -> Material:
 	return preload("res://scripts/systems/mat_lib.gd").solid(c, r)
@@ -269,6 +309,7 @@ func play_tape() -> bool:
 		hud.message("The tape hisses to its end.", 2)
 		return false
 	tape_played = true
+	_sfx.tape.play()
 	_advance(3)
 	hud.show_panel("(click — hiss — your father's voice)\n\n\"Happy birthday, beta. If you're hearing this, I'm late again. I'm sorry.\nI promised I'd be home by eight.\n\nEverything I keep in my study is locked with the day you were born.\nI never forget that date. Even when I forget everything else.\"\n\n(the tape runs on in silence)\n\n[E] close")
 	return true
@@ -361,6 +402,11 @@ func _update_mother(d: float) -> void:
 			subtitle("(she stops. Her face turns toward you.)", 2)
 		_mother_try += d
 		_mother_head.rotation.z = lerp(_mother_head.rotation.z, 0.35, d * 2.0)
+		if _mother_avatar:
+			# she stops, and turns her blank face toward you
+			preload("res://scripts/world/characters.gd").play(_mother_avatar, "idle", 0.2)
+			var tp := player.global_position - mother.global_position
+			mother.rotation.y = lerp_angle(mother.rotation.y, atan2(-tp.x, -tp.z), d * 2.5)
 		if _mother_try >= MOTHER_TRY:
 			fall_down("She tried to look at you. She has no face to look with.")
 		return
@@ -368,7 +414,11 @@ func _update_mother(d: float) -> void:
 	_mother_head.rotation.z = lerp(_mother_head.rotation.z, 0.0, d * 3.0)
 	if _mother_wait > 0.0:
 		_mother_wait -= d
+		if _mother_avatar:
+			preload("res://scripts/world/characters.gd").play(_mother_avatar, "idle")
 		return
+	if _mother_avatar:
+		preload("res://scripts/world/characters.gd").play(_mother_avatar, "walk", 0.85)
 	var target: Vector3 = _mother_path[_mother_i]
 	var to_t := target - mother.global_position; to_t.y = 0
 	if to_t.length() < 0.1:

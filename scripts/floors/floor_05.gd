@@ -32,7 +32,7 @@ func _ready() -> void:
 	setup_common()
 	spawn = Vector3(0, 0.05, 10.5)
 	_rain = AudioStreamPlayer.new(); _rain.stream = Sfx.get_stream("rain"); _rain.bus = "Ambience"
-	_rain.volume_db = -6; _rain.autoplay = true; add_child(_rain)
+	_rain.volume_db = -4; _rain.autoplay = true; add_child(_rain)
 	begin_floor()
 	_setup_sup()      # after begin_floor: spawn far from wherever the checkpoint put you
 
@@ -67,7 +67,20 @@ func _build() -> void:
 		var r := kit.cyl(0.02, 6.0, Vector3(7.0 + (k % 3) * 0.12, 0.1 + (k / 3) * 0.05, 3.0 + (k % 2) * 0.08), kit.m.metal_grey)
 		r.rotation.z = PI / 2
 	for k in 6:
-		kit.box(Vector3(0.6, 0.25, 0.4), Vector3(-6.0 + (k % 3) * 0.62, 0.125 + (k / 3) * 0.25, -11.5), Color(0.6, 0.58, 0.52))
+		if kit.prop("cement_bag", Vector3(-6.0 + (k % 3) * 0.5, (k / 3) * 0.18, -11.5), (k % 2) * 0.1, Vector3.ZERO, true) == null:
+			kit.box(Vector3(0.6, 0.25, 0.4), Vector3(-6.0 + (k % 3) * 0.62, 0.125 + (k / 3) * 0.25, -11.5), Color(0.6, 0.58, 0.52))
+	# site clutter
+	for p in [Vector3(12.5, 0, 10.0), Vector3(13.1, 0, 9.4), Vector3(-13.2, 0, -12.6)]:
+		kit.prop("Barrel_01", p, randf() * TAU)
+	kit.prop("old_tyre", Vector3(-8.5, 0.3, 8.0), 0.3)
+	kit.prop("old_tyre", Vector3(4.0, 0.3, 10.8), 1.2)
+	kit.prop("propane_tank", Vector3(13.4, 0, -6.2), 0.0)
+	kit.prop("portable_generator", Vector3(3.2, 0, -12.9), PI)
+	kit.prop("metal_jerrycan_green", Vector3(3.9, 0, -12.2), 0.5)
+	for k in 3:
+		kit.prop("plastic_crate_02", Vector3(-13.0, k * 0.25, 4.5), randf() * 0.3)
+	kit.prop("sledgehammer_01", Vector3(8.6, 0.75, 2.9), 0.0, Vector3.ZERO, false)
+	kit.prop("cement_bag", Vector3(1.5, 0, 6.5), 0.8)
 	# scaffold tower with a plank ramp up to its platform (x -12..-9, z -11..-8)
 	for p in [Vector3(-12, 0, -11), Vector3(-9, 0, -11), Vector3(-12, 0, -8), Vector3(-9, 0, -8)]:
 		kit.cyl(0.03, 2.6, p + Vector3(0, 1.3, 0), kit.m.metal_grey)
@@ -113,7 +126,9 @@ func _sheet(p: Vector3, yaw: float) -> void:
 	tw.tween_property(s, "rotation:x", 0.05, randf_range(1.2, 2.0)).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(s, "rotation:x", -0.03, randf_range(1.2, 2.0)).set_trans(Tween.TRANS_SINE)
 
+var _puddles: Array = []
 func _puddle(p: Vector3) -> void:
+	_puddles.append(p)
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(0.05, 0.06, 0.07); m.roughness = 0.02; m.metallic = 0.3
 	kit.box(Vector3(1.6, 0.01, 1.2), p + Vector3(0, 0.005, 0), m, false)
@@ -246,7 +261,12 @@ func fire_lures() -> void:
 		_lure_t = LURE_EVERY
 
 func floor_lights() -> Array: return kit.lights
-func surface_at(_p: Vector3) -> String: return "concrete"
+## Wet footsteps while standing in a puddle.
+func surface_at(p: Vector3) -> String:
+	for q in _puddles:
+		if absf(p.x - q.x) < 0.8 and absf(p.z - q.z) < 0.6:
+			return "water"
+	return "concrete"
 
 func _process(d: float) -> void:
 	super._process(d)

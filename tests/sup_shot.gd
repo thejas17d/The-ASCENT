@@ -1,7 +1,9 @@
 extends SceneTree
 ## Screenshots of the Supervisor in the archive test level (patrol + chase lamp).
 func _initialize() -> void:
+	await process_frame; await process_frame   # let autoload _ready run first
 	root.get_node("Graphics").apply(3)
+	root.get_node("Graphics").auto_mode = false
 	var lvl = load("res://scenes/dev/supervisor_test.tscn").instantiate()
 	root.add_child(lvl)
 	await create_timer(0.6).timeout

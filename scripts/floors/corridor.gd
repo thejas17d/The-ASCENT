@@ -6,6 +6,16 @@ extends Node3D
 
 const Mat := preload("res://scripts/systems/mat_lib.gd")
 const Batcher := preload("res://scripts/systems/batcher.gd")
+const Props := preload("res://scripts/world/props.gd")
+
+## A real CC0 model into the current target; null if missing (caller falls back).
+func _prop(id: String, pos: Vector3, yaw := 0.0, fit := Vector3.ZERO, collide := true) -> Node3D:
+	var n := Props.spawn(id, fit, collide)
+	if n == null:
+		return null
+	n.position = pos; n.rotation.y = yaw
+	_target.add_child(n)
+	return n
 
 const SLOTS := 10          # door slots per side, 4 m each
 const SLOT_LEN := 4.0
@@ -196,12 +206,17 @@ func _build_pass(anomaly: String, streak: int) -> void:
 		_chair(Vector3(0, 0, -24), PI)
 	else:
 		_chair(Vector3(1.15, 0, -16), -PI / 2)
-	_box(Vector3(0.45, 0.75, 0.45), Vector3(1.24, 0.375, -28), m_door)  # side table
-	_box(Vector3(0.5, 0.03, 0.5), Vector3(1.24, 0.765, -28), m_trim, false)
+	var table_top := 0.78
+	if _prop("side_table_01", Vector3(1.22, 0, -28), -PI / 2, Vector3(0.5, table_top, 0.45)) == null:
+		_box(Vector3(0.45, 0.75, 0.45), Vector3(1.24, 0.375, -28), m_door)  # side table
+		_box(Vector3(0.5, 0.03, 0.5), Vector3(1.24, 0.765, -28), m_trim, false)
 	if anomaly != "vase_missing":
-		var vm := CylinderMesh.new(); vm.top_radius = 0.06; vm.bottom_radius = 0.1; vm.height = 0.36
-		_mesh(vm, Vector3(1.24, 0.96, -28), Mat.solid(Color(0.16, 0.3, 0.55), 0.12))
-	if anomaly != "extinguisher_missing":
+		if _prop("ceramic_vase_01", Vector3(1.22, table_top, -28), 0.0, Vector3(0, 0.42, 0), false) == null:
+			var vm := CylinderMesh.new(); vm.top_radius = 0.06; vm.bottom_radius = 0.1; vm.height = 0.36
+			_mesh(vm, Vector3(1.24, 0.96, -28), Mat.solid(Color(0.16, 0.3, 0.55), 0.12))
+	if anomaly != "extinguisher_missing" and _prop("korean_fire_extinguisher_01", Vector3(-1.32, 0, -20), PI / 2, Vector3(0, 0.62, 0), false) != null:
+		pass
+	elif anomaly != "extinguisher_missing":
 		var em := CylinderMesh.new(); em.top_radius = 0.08; em.bottom_radius = 0.08; em.height = 0.52
 		_mesh(em, Vector3(-1.38, 0.62, -20), Mat.solid(Color(0.62, 0.04, 0.03), 0.3, 0.2))
 		_box(Vector3(0.05, 0.08, 0.05), Vector3(-1.38, 0.92, -20), Mat.solid(Color(0.05, 0.05, 0.05), 0.4), false)
@@ -327,6 +342,13 @@ func _figure(pos: Vector3) -> Node3D:
 	var f := Node3D.new()
 	f.position = pos
 	_target.add_child(f)
+	var C := preload("res://scripts/world/characters.gd")
+	var who: Node3D = C.spawn("Construction_Male_02", {"idle": "m_idle_neutral_01"}, {"height": 2.08, "tint": Color(0.1, 0.1, 0.11)})
+	if who:
+		who.rotation.y = PI
+		f.add_child(who)
+		C.play(who, "idle", 0.35)          # barely breathing
+		return f
 	var coat := Mat.solid(Color(0.025, 0.025, 0.028), 0.95)
 	var body := MeshInstance3D.new()
 	var cm := CapsuleMesh.new(); cm.radius = 0.27; cm.height = 1.95
@@ -385,6 +407,11 @@ func _chair(pos: Vector3, rot: float) -> void:
 	var n := Node3D.new()
 	n.position = pos; n.rotation.y = rot
 	_target.add_child(n)
+	if Props.available("painted_wooden_chair_01"):
+		var c := Props.spawn("painted_wooden_chair_01", Vector3(0, 0.96, 0), false)
+		c.rotation.y = PI
+		n.add_child(c)
+		return
 	var legs := Mat.solid(Color(0.12, 0.12, 0.13), 0.4, 0.8)
 	_child_box(n, Vector3(0.48, 0.05, 0.46), Vector3(0, 0.47, 0), m_ply)
 	_child_box(n, Vector3(0.48, 0.5, 0.04), Vector3(0, 0.76, 0.21), m_ply)

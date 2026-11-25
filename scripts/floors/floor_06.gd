@@ -125,11 +125,36 @@ func _make_shadow() -> void:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(0, 0, 0, 0.82); m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	var body := CapsuleMesh.new(); body.radius = 0.28; body.height = 1.75
-	kit.mesh(body, Vector3(0, 0.88, 0), m, shadow)
-	var head := SphereMesh.new(); head.radius = 0.13; head.height = 0.26
-	kit.mesh(head, Vector3(0, 1.72, 0), m, shadow)
+	var C := preload("res://scripts/world/characters.gd")
+	_shadow_body = C.spawn("Male_Adult_03", {"idle": "m_idle_neutral_01", "walk": "m_walk_neutral_01", "run": "m_run_neutral"}, {"height": 1.75})
+	if _shadow_body:
+		_shadow_body.rotation.y = PI
+		for mi in _shadow_body.find_children("*", "MeshInstance3D", true, false):
+			for s in (mi as MeshInstance3D).mesh.get_surface_count():
+				(mi as MeshInstance3D).set_surface_override_material(s, m)
+		shadow.add_child(_shadow_body)
+	else:
+		var body := CapsuleMesh.new(); body.radius = 0.28; body.height = 1.75
+		kit.mesh(body, Vector3(0, 0.88, 0), m, shadow)
+		var head := SphereMesh.new(); head.radius = 0.13; head.height = 0.26
+		kit.mesh(head, Vector3(0, 1.72, 0), m, shadow)
 	shadow.global_position = spawn
+
+var _shadow_body: Node3D
+var _shadow_last := Vector3.ZERO
+
+func _animate_shadow(d: float) -> void:
+	if _shadow_body == null or d <= 0.0:
+		return
+	var v := (shadow.global_position - _shadow_last).length() / d
+	_shadow_last = shadow.global_position
+	var C := preload("res://scripts/world/characters.gd")
+	if v < 0.2:
+		C.play(_shadow_body, "idle")
+	elif v > 3.0:
+		C.play(_shadow_body, "run", clamp(v / 3.6, 0.7, 1.5))
+	else:
+		C.play(_shadow_body, "walk", clamp(v / 1.4, 0.6, 2.0))
 
 # ---------------------------------------------------------------- logic
 ## Where the shadow is (SHADOW_DELAY seconds behind the player).
@@ -217,6 +242,7 @@ func _process(d: float) -> void:
 	player.cam.rotation.z = sin(_t * 0.4) * 0.025
 	if finished or busy or trapped:
 		return
+	_animate_shadow(d)
 	if not hunting:
 		_trail.append([_t, player.global_position, player.rotation.y])
 		var s := _shadow_sample()

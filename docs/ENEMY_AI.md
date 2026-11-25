@@ -44,5 +44,5 @@ sup.activate(sup.safe_spawn_point(points, player.global_position, get_world_3d()
 Hide spots are `Node3D` markers with meta `hide_kind` (e.g. "locker", "desk") and `eye` (camera height); their **-Z faces out** of the hiding place. Interactables carry meta `hide` + `hide_spot`; `FloorBase.on_player_hid()` forwards to `note_player_hid()`.
 
 ## Known limitations
-- The body is built from primitives (capsules + hemisphere helmet) with procedural limb swing. A rigged, animated model is a future art task.
+- The body is a rigged Microsoft Rocketbox construction worker (MIT), dark-tinted and 2.08 m tall, driven by motion-captured idle / slow walk / run clips chosen from its speed; the head turns toward the player. Primitives remain as the fallback if the model is missing. There is no bespoke attack or grab animation yet (the catch is a camera/fade beat).
 - Single entity; it can't open doors yet (floors with doors will need navigation links).

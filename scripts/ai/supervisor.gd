@@ -22,6 +22,7 @@ enum S { DORMANT, PATROL, SUSPICIOUS, INVESTIGATE, SEARCH, CHASE, ATTACK, RETURN
 const NAMES := ["dormant", "patrol", "suspicious", "investigate", "search", "chase", "attack", "return"]
 const Sfx := preload("res://scripts/systems/sfx.gd")
 const Mat := preload("res://scripts/systems/mat_lib.gd")
+const Characters := preload("res://scripts/world/characters.gd")
 const EYE_H := 1.95
 const NOTICE_BEAT := 0.8      # seconds it stops and stares before chasing
 const CLOSE_RANGE := 4.0      # inside this, no warning beat
@@ -56,6 +57,7 @@ var _walk := 0.0
 var _step_t := 0.0
 var _steps: AudioStreamPlayer3D
 var _rng := RandomNumberGenerator.new()
+var avatar: Node3D            # Rocketbox body (null → primitive fallback)
 
 func _ready() -> void:
 	_rng.randomize()
@@ -90,6 +92,17 @@ func _ready() -> void:
 ## A tall, thin worker in a long coat and a dusty site helmet. Its face is
 ## never lit: the helmet lamp points away from it.
 func _build_body() -> void:
+	# a real motion-captured worker in a site helmet, darkened almost to a silhouette
+	avatar = Characters.spawn("Construction_Male_02",
+		{"idle": "m_idle_neutral_01", "walk": "m_walk_slow_01", "run": "m_run_neutral"},
+		{"height": 2.08, "tint": Color(0.16, 0.16, 0.17)})
+	if avatar:
+		avatar.rotation.y = PI          # model faces +Z, the Supervisor faces -Z
+		add_child(avatar)
+		Characters.play(avatar, "idle")
+		_head = Node3D.new(); _head.position = Vector3(0, 2.02, 0); add_child(_head)
+		_add_lamp()
+		return
 	var coat := Mat.solid(Color(0.03, 0.03, 0.032), 0.95)
 	var skin := Mat.solid(Color(0.02, 0.018, 0.016), 0.9)
 	var helmet := Mat.solid(Color(0.55, 0.42, 0.08), 0.8)
@@ -116,6 +129,10 @@ func _build_body() -> void:
 	var bm := CylinderMesh.new(); bm.top_radius = 0.2; bm.bottom_radius = 0.2; bm.height = 0.015
 	var brim := MeshInstance3D.new(); brim.mesh = bm; brim.position.y = 0.06; brim.material_override = helmet
 	_head.add_child(brim)
+	_add_lamp()
+
+## The helmet lamp (the readable state indicator) on the head pivot.
+func _add_lamp() -> void:
 	var lens := MeshInstance3D.new(); var lsm := CylinderMesh.new()
 	lsm.top_radius = 0.035; lsm.bottom_radius = 0.035; lsm.height = 0.03
 	lens.mesh = lsm; lens.rotation.x = PI / 2; lens.position = Vector3(0, 0.1, -0.16)
@@ -193,6 +210,8 @@ func _physics_process(d: float) -> void:
 	if state == S.DORMANT or state == S.ATTACK or player == null:
 		velocity.x = 0; velocity.z = 0
 		move_and_slide()
+		if avatar:
+			Characters.play(avatar, "idle")
 		return
 	_state_t += d
 	last_perception = perceive()
@@ -378,6 +397,7 @@ func _patrol(d: float) -> void:
 		_head.rotation.y = sin(_state_t * 1.3) * 0.7   # looking around
 		return
 	_head.rotation.y = lerp(_head.rotation.y, 0.0, d * 3.0)
+	_wp = _wp % waypoints.size()
 	_go(waypoints[_wp])
 	if _arrived():
 		_wp = (_wp + 1) % waypoints.size()
@@ -490,6 +510,19 @@ func _animate(d: float) -> void:
 			_steps.pitch_scale = _rng.randf_range(0.55, 0.68)
 			_steps.play()
 			_step_t = PI / (spd * 3.2)
+	if avatar:
+		# mocap: slow walk ~0.9 m/s, run ~3.6 m/s at speed 1
+		if spd < 0.2:
+			Characters.play(avatar, "idle")
+		elif spd > 2.6:
+			Characters.play(avatar, "run", clamp(spd / 3.6, 0.7, 1.5))
+		else:
+			Characters.play(avatar, "walk", clamp(spd / 0.95, 0.6, 2.4))
+		if state == S.SUSPICIOUS or state == S.CHASE:
+			var to2 := player.global_position - global_position
+			var local2 := global_transform.basis.inverse() * to2
+			_head.rotation.y = lerp_angle(_head.rotation.y, clamp(atan2(-local2.x, -local2.z), -1.0, 1.0), d * 4.0)
+		return
 	var sw: float = sin(_walk) * clamp(spd / 3.0, 0.0, 0.6)
 	_legs[0].rotation.x = sw; _legs[1].rotation.x = -sw
 	_arms[0].rotation.x = -sw * 0.5; _arms[1].rotation.x = sw * 0.5

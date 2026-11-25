@@ -1,0 +1,17 @@
+CC-BY sounds used in THE ASCENT (credited in-game: title screen -> Credits)
+
+knocking.wav, doorslam.wav
+  "25 spooky sound effects" by Bart - https://opengameart.org/content/25-spooky-sound-effects
+  CC-BY 3.0. Author's request: "When you credit me, you must include a link back to http://opengameart.org"
+
+wind_loop.ogg
+  "Wind Loop" - Created by Jonathan Shaw (InspectorJ): https://freesound.org/people/InspectorJ/sounds/376415/
+  looped by antumdeluge - https://opengameart.org/content/wind-loop - CC-BY 3.0
+
+abandoned_building.wav
+  "Abandoned Building Ambience" by tcarisland - https://opengameart.org/content/abandoned-building-ambience
+  CC-BY 3.0 / 4.0 (used under CC-BY 3.0)
+
+steps/tile, steps/water - see steps_cb_license.txt
+
+https://creativecommons.org/licenses/by/3.0/

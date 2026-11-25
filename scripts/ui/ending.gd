@@ -90,7 +90,7 @@ func _summary() -> void:
 	if GameState.falls == 0:
 		s += "\nYou never fell.  Something has opened above the roof:  FLOOR 9.\n"
 	s += "\nNew Game+ (Night Shift) unlocked."
-	s += "\n\n— THE ASCENT —\nMade with Godot 4  ·  Textures: Poly Haven (CC0)  ·  All sound synthesised in code"
+	s += "\n\n— THE ASCENT —\n" + preload("res://scripts/systems/credits.gd").SHORT
 	_label.text = s
 	_label.add_theme_font_size_override("font_size", 24)
 	var b := Button.new(); b.text = "Return to the title"

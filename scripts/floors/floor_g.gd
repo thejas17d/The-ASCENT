@@ -73,15 +73,24 @@ func _build() -> void:
 	kit.box(Vector3(1.1, 1.0, 0.15), Vector3(6.45, 1.6, -2.6), kit.m.paint_warm)
 	kit.box(Vector3(2.6, 1.0, 0.04), Vector3(4.6, 1.6, -2.6), Mat_glass())
 	booth_door = kit.door(Vector3(3.0, 0, -3.3), PI / 2, "booth", "Security booth (locked)")
-	kit.box(Vector3(1.2, 0.75, 0.6), Vector3(5.6, 0.375, -5.5), kit.m.wood)              # guard desk
+	if kit.prop("metal_office_desk", Vector3(5.6, 0, -5.5), 0.0, Vector3(1.4, 0.79, 0.7)) == null:
+		kit.box(Vector3(1.2, 0.75, 0.6), Vector3(5.6, 0.375, -5.5), kit.m.wood)          # guard desk
 	var cab: Node3D = kit.box(Vector3(0.5, 0.6, 0.15), Vector3(6.85, 1.5, -4.6), kit.m.metal)
 	cab.rotation.y = -PI / 2
 	cab.set_meta("use", "cabinet"); cab.set_meta("prompt", "Key cabinet (3-digit lock)")
-	kit.note("g_guard", Vector3(5.5, 0.76, -5.4))
+	kit.note("g_guard", Vector3(5.5, 0.8, -5.4))
 	kit.chair(Vector3(5.6, 0, -4.8), PI)
 	# lobby furniture: sofa, plants, ceiling fans, notice board
-	kit.box(Vector3(2.2, 0.45, 0.8), Vector3(4.0, 0.225, 3.6), kit.m.cloth)
-	kit.box(Vector3(2.2, 0.6, 0.2), Vector3(4.0, 0.6, 4.0), kit.m.cloth)
+	if kit.prop("Sofa_01", Vector3(4.0, 0, 3.75), PI, Vector3(2.1, 0, 0)) == null:
+		kit.box(Vector3(2.2, 0.45, 0.8), Vector3(4.0, 0.225, 3.6), kit.m.cloth)
+		kit.box(Vector3(2.2, 0.6, 0.2), Vector3(4.0, 0.6, 4.0), kit.m.cloth)
+	kit.prop("WetFloorSign_01", Vector3(6.1, 0, -0.2), -0.6)
+	kit.prop("security_camera_01", Vector3(-6.75, 3.25, 5.75), PI * 0.75, Vector3.ZERO, false)
+	kit.prop("fire_alarm", Vector3(-6.97, 1.5, -3.5), PI / 2, Vector3.ZERO, false)
+	kit.prop("vintage_telephone_wall_clock", Vector3(-6.88, 1.65, 4.6), PI / 2, Vector3.ZERO, false)
+	kit.prop("korean_fire_extinguisher_01", Vector3(-6.75, 0, -1.2), PI / 2)
+	kit.prop("cardboard_box_01", Vector3(6.4, 0.17, 5.3), 0.4)
+	kit.prop("cardboard_box_01", Vector3(6.3, 0.51, 5.25), 1.1)
 	for p in [Vector3(-6.2, 0, 5.2), Vector3(6.2, 0, 5.2)]:
 		kit.cyl(0.25, 0.5, p + Vector3(0, 0.25, 0), Color(0.4, 0.25, 0.15))
 		var leaf := SphereMesh.new(); leaf.radius = 0.45; leaf.height = 0.9
@@ -103,6 +112,8 @@ func _build() -> void:
 func _fan(p: Vector3) -> Node3D:
 	var n := Node3D.new(); n.position = p + Vector3(0, -0.45, 0); add_child(n)
 	n.set_meta("dynamic", true)
+	if kit.prop("ceiling_fan", Vector3(0, 0.45, 0), 0.0, Vector3(1.3, 0, 0), false, n) != null:
+		return n
 	kit.cyl(0.015, 0.4, p + Vector3(0, -0.2, 0), kit.m.black)
 	kit.cyl(0.12, 0.12, Vector3.ZERO, Color(0.5, 0.48, 0.42), n)
 	for k in 3:

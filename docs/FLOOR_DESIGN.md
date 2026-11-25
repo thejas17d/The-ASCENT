@@ -25,7 +25,7 @@ Every floor extends `FloorBase`, builds itself from the `Kit` (`scripts/world/ki
 G→1 SITE OFFICE · 1→2 6 MEN. 6 NAMES. · 2→3 THE TALLY NEVER WIPES · 3→4 INSPECTION: PASSED · 4→5 IT HUNTS. · 5→6 NWOD SI PU · 6→7 14 JUNE 1998 03:33 · 7→8 THE ROOF IS NOT AN EXIT
 
 ## Known gaps (next passes)
-- Art: floors are kit-built from boxes with PBR textures; the Residence needs more domestic clutter, characters are primitive figures.
+- Art: walls/floors are kit-built boxes with PBR textures, dressed with 40 real CC0 models (desks, chairs, CRTs, sofa, brass puja items, site machinery…); every character is a rigged, mocap-animated Rocketbox avatar. Still primitive: doors, lockers, notice boards, the water tank, stairs.
 - Floor 2's "altered" dimming only applies on the first pass after a fall.
 - Floor 6's shadow passes through walls (it's a ghost); only the mirror room holds it.
 - Floor 9, New Game+, Night Shift, Daily Corridor and Memories: see REPLAYABILITY.md.

@@ -56,6 +56,7 @@ var _applied_once := false
 func _ready() -> void:
 	_setup_input()
 	_setup_audio_buses()
+	_setup_ui_sounds()
 	load_settings()
 	_load_unlocks()
 	new_game()
@@ -273,6 +274,22 @@ func go(scene: String) -> void:
 	get_tree().change_scene_to_file(scene)
 
 # ---------------------------------------------------------------- setup
+## Every Button in every menu/dialog clicks (CC0 Kenney interface sounds).
+var _ui_player: AudioStreamPlayer
+func _setup_ui_sounds() -> void:
+	_ui_player = AudioStreamPlayer.new()
+	_ui_player.stream = preload("res://scripts/systems/sfx.gd").get_stream("ui_click")
+	_ui_player.volume_db = -8
+	_ui_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_ui_player)
+	get_tree().node_added.connect(func(n):
+		if n is BaseButton and not n.pressed.is_connected(_ui_click):
+			n.pressed.connect(_ui_click))
+
+func _ui_click() -> void:
+	if _ui_player and _ui_player.is_inside_tree():
+		_ui_player.play()
+
 ## Buses: Master <- SFX (corridor reverb) , Ambience.
 func _setup_audio_buses() -> void:
 	if AudioServer.get_bus_index("SFX") >= 0:

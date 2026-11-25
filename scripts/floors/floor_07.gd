@@ -63,6 +63,16 @@ func _build() -> void:
 		d.rotation = Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU)
 		d.set_meta("dynamic", true)   # slowly turning
 		_debris.append([d, Vector3(rng.randf_range(-0.05, 0.05), rng.randf_range(-0.08, 0.08), rng.randf_range(-0.05, 0.05))])
+	var junk := ["cement_bag", "plastic_crate_02", "Barrel_01", "old_tyre", "sledgehammer_01", "metal_jerrycan_green", "cardboard_box_01"]
+	for i in 16:
+		var pos := Vector3(rng.randf_range(-12, 12), rng.randf_range(1.0, 3.0), rng.randf_range(-11, 8))
+		if pos.distance_to(Vector3(0, 1.6, 10.5)) < 3.0:
+			continue
+		var j: Node3D = kit.prop(junk[i % junk.size()], pos, rng.randf() * TAU, Vector3.ZERO, false)
+		if j:
+			j.rotation = Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU)
+			j.set_meta("dynamic", true)
+			_debris.append([j, Vector3(rng.randf_range(-0.05, 0.05), rng.randf_range(-0.08, 0.08), rng.randf_range(-0.05, 0.05))])
 	for p in [Vector3(-7, 1.8, -1), Vector3(7, 1.8, -1), Vector3(0, 1.8, 9), Vector3(-6, 1.8, -12), Vector3(6, 1.8, 3)]:
 		kit.lamp(p, "work", Color(1.0, 0.45, 0.25), 0.9, 8.0)
 	kit.board(Vector3(-4.0, 1.5, 11.86), PI, rules.rules)
@@ -87,14 +97,24 @@ func _spawn_workers() -> void:
 		var cs := CollisionShape3D.new(); var sh := CapsuleShape3D.new(); sh.radius = 0.3; sh.height = 1.8
 		cs.shape = sh; cs.position.y = 0.9; w.add_child(cs)
 		add_child(w)
-		var vest := StandardMaterial3D.new(); vest.albedo_color = Color(0.7, 0.35, 0.08); vest.roughness = 0.9
-		var grey := StandardMaterial3D.new(); grey.albedo_color = Color(0.45, 0.43, 0.4)
-		var body := CapsuleMesh.new(); body.radius = 0.25; body.height = 1.5
-		kit.mesh(body, Vector3(0, 0.85, 0), vest, w)
-		var head := SphereMesh.new(); head.radius = 0.12; head.height = 0.25
-		kit.mesh(head, Vector3(0, 1.72, 0), grey, w)
-		var hel := SphereMesh.new(); hel.radius = 0.15; hel.height = 0.15; hel.is_hemisphere = true
-		kit.mesh(hel, Vector3(0, 1.78, 0), Color(0.85, 0.82, 0.7), w)
+		var C := preload("res://scripts/world/characters.gd")
+		var av: Node3D = C.spawn(["Construction_Male_04", "Construction_Male_07"][i % 2],
+			{"idle": "m_idle_neutral_01", "walk": "m_walk_slow_01"},
+			{"height": 1.78, "tint": Color(0.62, 0.6, 0.58)})     # dust-grey: frozen in 1998
+		if av:
+			av.rotation.y = PI
+			w.add_child(av)
+			C.play(av, "walk", 0.0)          # frozen mid-step
+			w.set_meta("avatar", av)
+		else:
+			var vest := StandardMaterial3D.new(); vest.albedo_color = Color(0.7, 0.35, 0.08); vest.roughness = 0.9
+			var grey := StandardMaterial3D.new(); grey.albedo_color = Color(0.45, 0.43, 0.4)
+			var body := CapsuleMesh.new(); body.radius = 0.25; body.height = 1.5
+			kit.mesh(body, Vector3(0, 0.85, 0), vest, w)
+			var head := SphereMesh.new(); head.radius = 0.12; head.height = 0.25
+			kit.mesh(head, Vector3(0, 1.72, 0), grey, w)
+			var hel := SphereMesh.new(); hel.radius = 0.15; hel.height = 0.15; hel.is_hemisphere = true
+			kit.mesh(hel, Vector3(0, 1.78, 0), Color(0.85, 0.82, 0.7), w)
 		kit.label(WORKERS[i][1], Vector3(0, 1.2, -0.26), PI, Color(0.1, 0.1, 0.1), 22, true, w)
 		w.set_meta("use", "worker:%d" % i)
 		w.set_meta("prompt", WORKERS[i][1].capitalize())
@@ -182,8 +202,13 @@ func update_workers(d: float) -> void:
 		if to.length() < 0.9:
 			die("%s reached you." % str(WORKERS[workers.find(w)][1]).capitalize())
 			return
+		var av: Node3D = n.get_meta("avatar", null)
 		if _looking_at(n.global_position + Vector3(0, 1.2, 0), 0.55):
+			if av:
+				preload("res://scripts/world/characters.gd").play(av, "walk", 0.0)   # freeze mid-step
 			continue
+		if av:
+			preload("res://scripts/world/characters.gd").play(av, "walk", 1.2)
 		n.global_position += to.normalized() * CREEP_SPEED * d
 		n.look_at(Vector3(player.global_position.x, n.global_position.y, player.global_position.z), Vector3.UP)
 		moving = true

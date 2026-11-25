@@ -9,8 +9,9 @@ Run from the project folder (Git Bash shown; in cmd use `"%USERPROFILE%\.godot\G
 | Night Shift, NG+, voice notes, Memories, Daily, Floor 9, menu, endings | `godot --headless --path . -s res://tests/test_phase6.gd` | 31 | 31/31 pass |
 | Touch joystick/look/buttons, crouch toggle, gyro, haptics, 1K textures, settings, stretch | `godot --headless --path . -s res://tests/test_mobile.gd` | 28 | 28/28 pass |
 | Review-2 regressions + **end-to-end playthrough** (real scene changes: title → G…8 → ending, a fall, quit/Continue) | `godot --headless --path . -s res://tests/test_phase8.gd` | 44 | 44/44 pass |
+| Real assets: every CC0 model loads with a collider, fit-to-size, characters + mocap, floors use them, every recorded sound, wet puddle steps, model cache released per floor, in-game credits | `godot --headless --path . -s res://tests/test_assets.gd` | 46 | 46/46 pass |
 
-**Total: 279 checks, all passing (v0.8.0).** Performance: `tests/perf.gd` (see `docs/PERFORMANCE.md`).
+**Total: 325 checks, all passing (v0.9.0).** Performance: `tests/perf.gd` (see `docs/PERFORMANCE.md`).
 
 Mobile renderer screenshot with the touch overlay: `godot --rendering-method mobile --path . -s res://tests/mobile_shot.gd`.
 
@@ -23,5 +24,7 @@ Both back up and restore your real `user://save.json` / `settings.json`.
 **All floors** plays each puzzle to completion through the floors' own methods and checks every rule's consequence (falls to the right floor, deaths restart the right floor, checkpoints restore), both endings, the Floor 9 unlock, stairwell story beats and floor-to-floor flow. Scene changes are intercepted via `GameState.test_mode`.
 
 Screenshot helpers (windowed): `tests/floor_shot.gd -- <g|stair|1|3|4|5|6|7|8>`, `tests/shot.gd -- <quality 0-3> <tag>`, `tests/menu_shot.gd`, `tests/sup_shot.gd`; images land in `%APPDATA%/Godot/app_userdata/The Ascent/`.
+
+**Assets** covers: all 40 Poly Haven models load as StaticBody3D with a box collider; fit-to-size scales model and collider together; a missing model returns null (callers fall back to primitives); all 5 Rocketbox avatars have the 82-bone skeleton, every surface textured and a mocap walk playing; the 6 clips loop; the Supervisor, Mother and all six workers are real characters in-game and the Supervisor walks with the mocap cycle; Floor 1 has > 40 model instances; Floor 5 puddles give wet footsteps; leaving a floor releases its cached models; 18 sound ids use recordings (randomised takes + pitch for steps); hum/ring stay synthesised; loops loop; every button clicks; the Credits page shows every CC-BY author, the Rocketbox MIT notice and Godot's licences.
 
 Not yet tested: a real human playtest, touch devices, Android performance.

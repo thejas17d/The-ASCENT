@@ -90,6 +90,10 @@ func _build() -> void:
 	# roof clutter: AC units, pipes, a satellite dish, chalk note
 	for p in [Vector3(6, 0, 6), Vector3(-9, 0, 4), Vector3(10, 0, -13), Vector3(-3, 0, -12)]:
 		kit.box(Vector3(1.6, 1.1, 1.0), p + Vector3(0, 0.55, 0), kit.m.metal_grey)
+	kit.prop("utility_box_01", Vector3(2.6, 0, 11.6), PI)
+	kit.prop("utility_box_01", Vector3(-2.7, 0, 11.6), PI)
+	kit.prop("Barrel_01", Vector3(12.5, 0, 8.5), 0.4)
+	kit.prop("metal_jerrycan_green", Vector3(12.1, 0, 9.2), 1.1)
 	kit.note("f_paint", Vector3(-14.0, 1.105, 2.0), 0.0)   # lying on the parapet
 	# crumbling sections along the chase route
 	for z in [5.0, 0.0, -3.0]:
@@ -104,6 +108,16 @@ func _build_father() -> void:
 	father = Node3D.new(); add_child(father)
 	father.position = FATHER
 	father.rotation.y = 0.0      # looking out along the boom, away from you
+	var C := preload("res://scripts/world/characters.gd")
+	var dad: Node3D = C.spawn("Male_Adult_03", {"idle": "m_idle_neutral_01"}, {"height": 1.74})
+	if dad:
+		dad.rotation.y = PI
+		father.add_child(dad)
+		C.play(dad, "idle", 0.8)
+		var l0 := OmniLight3D.new(); l0.position = Vector3(0, 2.6, 0); l0.light_color = Color(1, 0.75, 0.55)
+		l0.light_energy = 0.8; l0.omni_range = 4.0
+		father.add_child(l0)
+		return
 	var shirt := StandardMaterial3D.new(); shirt.albedo_color = Color(0.55, 0.52, 0.45)
 	var dark := StandardMaterial3D.new(); dark.albedo_color = Color(0.08, 0.07, 0.07)
 	var body := CapsuleMesh.new(); body.radius = 0.24; body.height = 1.15
@@ -289,7 +303,7 @@ func _process(d: float) -> void:
 			var chunk: Node3D = c[1]
 			var tw := chunk.create_tween()
 			tw.tween_property(chunk, "position:y", -6.0, 1.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-			play_at("slam", chunk.global_position)
+			play_at("boom", chunk.global_position)
 			subtitle("(the roof gives way behind you)", 1.5)
 	if on_tank and Vector2(p.x - FATHER.x, p.z - FATHER.z).length() < 2.6:
 		confront()

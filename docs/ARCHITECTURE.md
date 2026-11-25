@@ -22,7 +22,10 @@ Everything is built from code + data so floors/anomalies/rules can be added with
 | `scripts/floors/corridor.gd` | Procedural corridor builder + `add_chalk/add_diya/add_pickup` |
 | `scripts/player/player.gd` | FP controller, battery, phone (cull layer 2), hiding, breath, `noise` |
 | `scripts/systems/event_director.gd` | Paranormal Event Director (reads `data/events/director.json`) |
-| `scripts/systems/sfx.gd` | Procedural placeholder audio |
+| `scripts/systems/sfx.gd` | Sound bank: recorded CC0/CC-BY sounds (`assets/audio`, several takes → `AudioStreamRandomizer`), procedural synth fallback for everything else |
+| `scripts/world/props.gd` | Real 3D props: Poly Haven CC0 glTF (`assets/models`), fit-to-size + box collider; `kit.prop(id, pos, yaw, fit)` places one, primitives are the fallback |
+| `scripts/world/characters.gd` | Real people: Microsoft Rocketbox avatars (MIT) + mocap clips on one 82-bone skeleton; `spawn(id, clips, {height, tint, faceless})`, `play(who, clip, speed)` |
+| `scripts/systems/credits.gd` | In-game credits + licence notices (CC-BY authors, Rocketbox MIT, Godot) — title screen → Credits |
 | `scripts/ui/hud.gd` | Prompt, messages, panel, dread vignette, status, breath bar, phone viewfinder |
 | `data/…` | anomalies, floor rules, director events |
 

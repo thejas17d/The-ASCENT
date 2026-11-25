@@ -10,7 +10,7 @@
 - [x] Anomaly loop, 12 anomalies, 8-streak, chalk tally
 - [x] Room 213 reveal + clue, floor clear
 - [x] Dread (darkness, anomalies, mistakes) + breakdown
-- [x] Procedural placeholder audio
+- [x] Procedural placeholder audio (replaced by recordings in Phase 9; synth kept as fallback)
 - [ ] **Needs human playtest for fun/tuning** (anomaly subtlety, 55% rate, dread rates)
 
 ## Phase 3 — core systems ✅ (tested headless; needs playtest)
@@ -82,5 +82,14 @@ See `docs/MOBILE_BUILD.md`.
 - [x] Builds: Windows exe (`build_windows.cmd`, smoke-tested) and phone APK (`build_android.cmd`, arm64, 59 MB)
 - [x] `tests/test_phase8.gd` — 44 checks; all suites: 279 pass
 - [ ] Human playtest · phone test · release signing · store assets — see `docs/RELEASE_CHECKLIST.md`
+
+## Phase 9 — real 3D models + recorded audio ✅ (v0.9.0)
+- [x] 40 Poly Haven CC0 glTF models (1K PBR) dress every floor: desks, chairs, CRTs, sofa, brass puja items, kettle, day bed, fuse boxes, site machinery, floating junk… (`scripts/world/props.gd`, `kit.prop`); every placement keeps a primitive fallback
+- [x] Rigged, motion-captured people from Microsoft Rocketbox (MIT): the Supervisor, the Floor 2 figure, Mother (faceless), the six workers, Papa, the Floor 6 shadow (`scripts/world/characters.gd`); idle/walk/run chosen from speed
+- [x] Recorded sound bank (CC0 + CC-BY): footsteps per surface with random takes + pitch (incl. wet steps in Floor 5 puddles), knocks, door slam/creak, metal, splashes, heartbeat loop that speeds up with dread, stingers, rain, wind, room-tone beds per floor, tape deck, UI clicks; synth fallback kept
+- [x] In-game Credits page (CC-BY authors, Rocketbox MIT notice, Godot licences) — `scripts/systems/credits.gd`; `docs/ASSET_LICENCES.md` rewritten
+- [x] Model cache released when a floor exits (VRAM no longer accumulates every model across the climb)
+- [x] `tests/test_assets.gd` — 46 checks; all suites: 325 pass
+- [ ] Perf re-profile on High/Ultra and the phone renderer (the run was stopped by low system memory) · screenshots · phone APK is now ≈ 229 MB (see `docs/MOBILE_BUILD.md`)
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

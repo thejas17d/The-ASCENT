@@ -8,6 +8,7 @@ func _initialize() -> void:
 	gs.new_game()
 	gs.settings.touch_controls = 1
 	root.get_node("Graphics").apply(1)
+	root.get_node("Graphics").auto_mode = false
 	var f = load("res://scenes/floor_02.tscn").instantiate()
 	root.add_child(f)
 	await create_timer(0.8).timeout

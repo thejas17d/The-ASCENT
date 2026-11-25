@@ -2,10 +2,12 @@ extends SceneTree
 ## Renders screenshots: godot --path . -s res://tests/shot.gd -- <quality 0-3> <tag>
 ## Saves user://shot_<tag>_<view>.png for several camera views.
 func _initialize() -> void:
+	await process_frame; await process_frame   # let autoload _ready run first
 	var args := OS.get_cmdline_user_args()
 	var q := int(args[0]) if args.size() > 0 else 2
 	var tag: String = args[1] if args.size() > 1 else "q%d" % q
 	root.get_node("Graphics").apply(q)
+	root.get_node("Graphics").auto_mode = false
 	var m = load("res://scenes/floor_02.tscn").instantiate(); root.add_child(m)
 	await create_timer(0.5).timeout
 	m.director.enabled = false

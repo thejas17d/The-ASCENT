@@ -58,6 +58,9 @@ func _build() -> void:
 	for f in [[Vector3(-11.9, 1.4, 3.0), PI / 2], [Vector3(11.9, 1.4, -5.0), -PI / 2], [Vector3(-8.0, 1.4, -15.9), 0.0]]:
 		var b: Node3D = kit.box(Vector3(0.5, 0.7, 0.18), f[0], kit.m.metal_grey)
 		b.rotation.y = f[1]
+		var pb := kit.prop("power_box_01", Vector3(0, -0.05, -0.06), 0.0, Vector3(0.5, 0.55, 0.3), false, b)
+		if pb:
+			(b.get_child(1) as MeshInstance3D).visible = false
 		b.set_meta("use", "fuse"); b.set_meta("prompt", "Fuse box — restore power")
 		var led: Node3D = kit.box(Vector3(0.06, 0.06, 0.02), Vector3(0.15, 0.25, 0.1), Mat_led(Color(0.1, 1, 0.2)), false, b)
 		fuses.append({"node": b, "cool": 0.0, "led": led})
@@ -67,6 +70,12 @@ func _build() -> void:
 	for i in PAGES:
 		kit.item("r_page_%d" % i, "torn page", page_spots[i], "page", Color(0.85, 0.8, 0.68))
 	kit.board(Vector3(-3.0, 1.6, 15.88), PI, rules.rules)
+	for b in [Vector3(-10.8, 0, 12.5), Vector3(-10.4, 0, 13.4), Vector3(10.6, 0, -13.8), Vector3(1.4, 0, 9.5), Vector3(-1.5, 0, -6.2)]:
+		kit.prop("cardboard_box_01", b + Vector3(0, 0.17, 0), randf() * TAU)
+	kit.prop("cardboard_box_01", Vector3(-10.6, 0.51, 12.9), 0.7)
+	kit.prop("clipboard", Vector3(-7.2, 0.79, -14.5), 0.4, Vector3.ZERO, false)
+	kit.prop("korean_fire_extinguisher_01", Vector3(11.6, 0, 3.0), -PI / 2)
+	kit.prop("WetFloorSign_01", Vector3(0.6, 0, 1.2), 0.8)
 	kit.note("r_archivist", Vector3(1.2, 0.006, 13.5))
 	if not GameState.collectibles.has("voice_1"):
 		kit.item("voice_1", "cassette (voice note)", Vector3(7.3, 0.79, -14.5), "tape", Color(0.75, 0.2, 0.15))

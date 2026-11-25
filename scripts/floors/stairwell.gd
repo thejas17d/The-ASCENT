@@ -65,6 +65,8 @@ func _build(from: int) -> void:
 	# painted floor numbers
 	kit.label(GameState.floor_label(from), Vector3(0, 3.1, 0.36), PI, Color(0.12, 0.11, 0.1), 260)
 	kit.label(GameState.floor_label(from + 1), Vector3(1.09, 4.6, -7.0), -PI / 2, Color(0.12, 0.11, 0.1), 260)
+	kit.prop("fire_alarm", Vector3(-1.09, 1.5, -1.2), PI / 2, Vector3.ZERO, false)
+	kit.prop("korean_fire_extinguisher_01", Vector3(0.85, 0, -0.2), PI)
 	kit.lamp(Vector3(0, 3.0, -0.8), "bulb", Color(1.0, 0.82, 0.55), 1.0, 5.0, true)
 	kit.lamp(Vector3(0, 6.0, -7.0), "bulb", Color(1.0, 0.82, 0.55), 1.0, 5.0, true)
 
