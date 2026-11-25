@@ -38,10 +38,14 @@ var _bob := 0.0
 var _step_phase := 0
 var _eye := EYE
 var _breath_lock := false       # after a gasp, Space must be released first
+var _hide_eye := EYE
+var _burst := 0.0               # temporary loud noise (gasp, knocking things over)
+var _burst_t := 0.0
 var _pre_hide: Transform3D
 var _flicker := 0.0
 
 func _ready() -> void:
+	collision_mask = 1 | 4   # world + the Supervisor (layer 4)
 	var col := CollisionShape3D.new()
 	var cap := CapsuleShape3D.new(); cap.radius = 0.3; cap.height = 1.7
 	col.shape = cap; col.position.y = 0.85
@@ -130,7 +134,11 @@ func hide_in(spot: Node3D) -> void:
 	is_crouching = false
 	global_position = spot.global_position
 	rotation.y = spot.global_rotation.y
+	_hide_eye = float(spot.get_meta("eye", EYE))
 	velocity = Vector3.ZERO
+
+func noise_burst(level: float, secs: float) -> void:
+	_burst = max(_burst, level); _burst_t = max(_burst_t, secs)
 
 func leave_hiding() -> void:
 	hiding = false
@@ -157,13 +165,18 @@ func _physics_process(d: float) -> void:
 		if breath <= 0.0:
 			holding_breath = false
 			_breath_lock = true
+			noise_burst(0.9, 0.8)
 			gasped.emit()
 	else:
 		breath = min(100.0, breath + BREATH_REGEN * d)
+	_burst_t -= d
+	if _burst_t <= 0.0:
+		_burst = 0.0
 	if hiding:
 		is_running = false
-		noise = 0.0 if holding_breath else 0.1
+		noise = max(0.0 if holding_breath else 0.1, _burst)
 		velocity = Vector3.ZERO
+		cam.position.y = lerp(cam.position.y, _hide_eye, clamp(d * 10.0, 0.0, 1.0))
 		return
 	if not is_on_floor():
 		velocity.y -= 9.8 * d
@@ -178,7 +191,7 @@ func _physics_process(d: float) -> void:
 	velocity.z = dir.z * sp
 	move_and_slide()
 	var moving := v.length() > 0.1 and get_real_velocity().length() > 0.5
-	noise = 1.0 if is_running else (0.1 if is_crouching else (0.3 if moving else 0.05))
+	noise = max(1.0 if is_running else (0.1 if is_crouching else (0.3 if moving else 0.05)), _burst)
 	# head bob + footsteps on each trough
 	if moving:
 		_bob += d * (11.0 if is_running else (5.0 if is_crouching else 7.0))

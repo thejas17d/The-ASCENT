@@ -42,6 +42,7 @@ func _ready() -> void:
 			cont.text = "Continue — Floor %d coming soon" % GameState.floor_num
 		GameState.new_game()   # loading was only a peek
 	_button("New Game", _new)
+	_button("Test: The Supervisor", func(): get_tree().change_scene_to_file("res://scenes/dev/supervisor_test.tscn"))
 	_button("Settings", _open_settings)
 	_button("Quit", func(): get_tree().quit())
 	var hint := Label.new(); hint.text = "Headphones recommended."

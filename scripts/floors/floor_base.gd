@@ -124,6 +124,7 @@ func surface_at(_pos: Vector3) -> String: return "concrete"
 func on_interact(_t: Object) -> bool: return false
 func on_breakdown() -> void: pass
 func perform_floor_event(_id: String) -> bool: return false
+func on_player_hid(_spot: Node3D) -> void: pass
 
 # ---------------------------------------------------------------- per frame
 func _process(d: float) -> void:
@@ -186,10 +187,13 @@ func _on_interact(t: Object) -> void:
 		hud.message("Picked up " + kind + ".", 2)
 		t.queue_free()
 		return
-	if t.has_meta("hide") and hide_spot():
-		player.hide_in(hide_spot())
-		hud.message("You squeeze into the almirah. Hold [Space] to hold your breath.", 3)
-		return
+	if t.has_meta("hide"):
+		var spot: Node3D = t.get_meta("hide_spot") if t.has_meta("hide_spot") else hide_spot()
+		if spot:
+			player.hide_in(spot)
+			on_player_hid(spot)
+			hud.message(str(t.get_meta("hide_msg", "You squeeze inside. Hold [Space] to hold your breath.")), 3)
+			return
 	on_interact(t)
 
 func read_note(id: String, node: Object = null) -> void:

@@ -25,7 +25,26 @@
 - [x] Event Director: 7 data-driven events, dread gating, cooldowns, quiet/relief rhythm, 2 fair "fake" events
 - [ ] Floor-down penalty is recorded (`GameState.falls`) but can't move floors until Floor 1 exists
 - [ ] Settings screen (values exist in GameState.settings, no UI yet)
-## Phase 4 — The Supervisor (NEXT)
- (NavigationAgent3D state machine)
-## Phase 5 — Floors G,1,3–8 · Phase 6 — story/endings/Floor 9
-## Phase 7 — touch controls, gyro, haptics, Android export · Phase 8 — QA
+## Audit + UHD pass ✅ (2026-11-25)
+- [x] Independent code review: 13 defects found, all fixed, each with a regression test
+- [x] CC0 PBR textures (Poly Haven), detailed corridor kit; Forward+ on desktop, Mobile renderer on phones
+- [x] Quality presets Low/Medium/High/Ultra (Ultra = native resolution, UHD on a 4K display, MSAA 4x + TAA, SSR, 8K shadow atlas)
+- [x] Volumetric fog, SSAO, SSIL, glow, AgX tonemap; film grain / vignette / chromatic aberration / VHS tear post FX
+- [x] Torch beam pattern, dust motes, decals, fluorescent fixtures, cinematic title screen
+- [x] Audio buses + reverb, surface footsteps, heartbeat, subtitles for every sound event
+- [x] Pause menu, settings screen (user://settings.json), F11 fullscreen, crouch
+- [x] Readable notes (collectibles) that clue the lying/incomplete rules
+
+## Phase 4 — The Supervisor ✅ (dev test level; needs playtest)
+- [x] State machine, senses (sight/sound/light, per-floor toggles), awareness, amber notice beat
+- [x] Navmesh baked at runtime; patrol / investigate / search / chase / attack / return
+- [x] Hiding-spot learning, fair spawns, readable lamp states, heavy footsteps
+- [x] Archive test level with lockers + desks (title menu → Test: The Supervisor)
+- [x] 23 AI tests
+- [ ] Rigged/animated character model (art)
+
+## Phase 5 — Floors (NEXT)
+G Reception · 1 Office · 3 Records (reuse archive) · 4 Residence · 5 Hunt · 6 Inversion · 7 Collapse · 8 Roof
+## Phase 6 — story, endings, hidden Floor 9
+## Phase 7 — touch controls, gyro, haptics, Android export
+## Phase 8 — QA and release checklist

@@ -5,6 +5,12 @@ Everything is built from code + data so floors/anomalies/rules can be added with
 |---|---|
 | `scenes/menu.tscn` + `scripts/ui/menu.gd` | Title screen (main scene) |
 | `scripts/autoload/game_state.gd` | **GameState**: floor, checkpoint, inventory, choices, falls, settings, save/load, input map |
+| `scripts/autoload/graphics.gd` | **Graphics**: Low/Medium/High/Ultra presets, shared Environment (volumetric fog, SSAO/SSIL/SSR, glow, AgX) |
+| `scripts/systems/mat_lib.gd` | PBR material library (world-triplanar CC0 textures, colour fallbacks) |
+| `shaders/post_fx.gdshader` | Grain, vignette, dread aberration/pulse, VHS tear |
+| `scripts/ai/supervisor.gd` | The Supervisor (see ENEMY_AI.md) |
+| `scripts/floors/archive_test.gd` | Dev test level for the Supervisor (navmesh baked at runtime) |
+| `scripts/ui/pause_menu.gd`, `settings_panel.gd`, `ui_theme.gd` | Pause, settings (user://settings.json), shared UI theme |
 | `scripts/autoload/dread.gd` | **Dread**: 0–100, `tick()`, `add()`, `breakdown` signal, tiers |
 | `scripts/floors/floor_base.gd` | **FloorBase**: player, HUD, director, audio, items, hiding, pickups, generic events. Hooks: `world_root`, `floor_lights`, `hide_spot`, `on_interact`, `on_breakdown`, `perform_floor_event` |
 | `scripts/floors/floor_02.gd` + `scenes/floor_02.tscn` | Floor 2 rules, anomaly loop, knocking, Room 213 |
