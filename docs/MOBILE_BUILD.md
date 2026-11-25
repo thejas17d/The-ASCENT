@@ -22,10 +22,10 @@ Manual build: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64_console.exe" --he
 
 ## Export preset
 - Package `com.meridian.theascent`, version 0.10.0 (code 4), signed with the debug key. Presets: "Android Phone" (arm64, **≈ 295 MB** after the v0.10 visual pass — used by build_android.cmd) and "Android" (+x86_64 for emulators; not rebuilt since 0.8).
-- **APK size (v0.9.0 breakdown; v0.10 adds ~65 MB of 1K surface sets and models):** 125 MB model textures (132 × 1K, ETC2) + 32 MB character textures + 30 MB 1K surface textures + 24 MB engine libraries + ~15 MB scenes/audio. Fine for sideloading; **over Google Play's 200 MB base-download limit**. Options before a store release: a phone-only 512 px set for the model normal/ARM maps (≈ −60 MB), or Play Asset Delivery (needs the gradle/AAB build).
+- **APK size (v0.9.0 breakdown; v0.10 adds ~65 MB of 1K surface sets and models):** 125 MB model textures (132 × 1K, ETC2) + 32 MB character textures + 30 MB 1K surface textures + 24 MB engine libraries + ~15 MB scenes/audio. Fine for sideloading, and **within Google Play's limits** (checked Nov 2026 on the Play Console help page "Optimize your app's size": base module 500 MB compressed download, 4 GB total install-time; apps over 200 MB only show a non-blocking warning to people installing on mobile data). Play requires an **app bundle (AAB)**, not this APK — APK uploads are held to the legacy 100 MB limit. Smaller is still better for installs on mobile data / low-storage phones: a phone-only 512 px set for the model normal/ARM maps would save ≈ 60 MB.
 - Architectures: **arm64-v8a** (phones) + **x86_64** (emulators). For a store/release build drop x86_64 (−80 MB).
 - Landscape (sensor), immersive full-screen, **VIBRATE** permission.
-- Exports `*.json` data (non-resource files) and **excludes the 2K textures** — phones use the 1K set (`assets/textures_1k/`, 21 MB of JPGs, ETC2/ASTC-compressed on import). APK ≈ 295 MB after v0.10 (target was < 300 MB — only just inside; Play's base limit is 200 MB — see above).
+- Exports `*.json` data (non-resource files) and **excludes the 2K textures** — phones use the 1K set (`assets/textures_1k/`, 21 MB of JPGs, ETC2/ASTC-compressed on import). APK ≈ 295 MB after v0.10 (target was < 300 MB — only just inside; Play's base module limit is 500 MB — see above).
 - Renderer on phones: **Mobile** (`rendering_method.mobile`). No volumetric fog/SSAO/SSIL/SSR there — `Graphics` skips them automatically; default preset Medium (bilinear 0.8 scale + FXAA; FSR is Forward+-only in Godot 4.4).
 
 ## Touch controls

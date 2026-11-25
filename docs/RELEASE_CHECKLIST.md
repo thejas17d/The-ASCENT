@@ -6,7 +6,7 @@ Legend: ✅ done & verified · 🟡 done, needs a human/device check · ⬜ not 
 - ✅ Version 0.10.0 (project + Android versionCode 4 + Windows file version)
 - ✅ Windows build: `build_windows.cmd` → `build/windows/TheAscent.exe` (97 MB) + `TheAscent.pck` (464 MB, nearly all textures). Smoke-tested headless for 0.10.0: starts, exit 0, no errors in log.
 - ✅ Android phone APK: `build_android.cmd` → `build/TheAscent-phone.apk` (arm64, **≈ 295 MB**, debug-signed) + installs via adb.
-- ⬜ **APK over Google Play's 200 MB base limit** since the real models — see `docs/MOBILE_BUILD.md` for the two fixes (phone-only smaller model maps, or Play Asset Delivery). Sideloading is unaffected.
+- ⬜ **Build an app bundle (AAB) for Play** — Play takes AABs (APK uploads are capped at the legacy 100 MB). Needs Godot's gradle build: install the Android build template (Project → Install Android Build Template) and export with format AAB. At ≈ 295 MB the game is within Play's 500 MB base-module limit; installs over 200 MB on mobile data get a non-blocking size warning (`docs/MOBILE_BUILD.md`).
 - 🟡 Android emulator APK (`Android` preset, arm64 + x86_64, ≈ 86 MB) — builds; no system image installed to boot it.
 - ⬜ **Release signing (Android)**: create your own keystore (keep it OUT of the repo, back it up — losing it means you can never update the app):
   `"%USERPROFILE%\.android-toolchain\jdk\bin\keytool" -genkeypair -v -keystore theascent-release.keystore -alias theascent -keyalg RSA -keysize 2048 -validity 10000`
