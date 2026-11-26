@@ -61,6 +61,7 @@ func setup_common() -> void:
 	player.flashlight_toggled.connect(func(_on): _sfx.click.play())
 	player.reloaded.connect(func(ok): hud.message("Battery replaced." if ok else "No spare batteries.", 2))
 	hud = Hud.new(); add_child(hud)
+	hud.player = player
 	pause_menu = Pause.new(); add_child(pause_menu)
 	if GameState.touch_active():
 		touch = Touch.new(); touch.player = player
@@ -92,6 +93,7 @@ func setup_common() -> void:
 		add_child(amb)
 	_make_dust()
 	_capture_probes_without_torch()
+	_apply_acoustics()
 	Graphics.changed.connect(_on_graphics_changed)
 	Graphics.auto_lowered.connect(func(q): hud.message("Graphics lowered to %s for smoother play. (Settings → Graphics quality)" % Graphics.PRESETS[q], 4))
 	Graphics.begin_measure()
@@ -167,6 +169,31 @@ func ambience_id() -> String:
 	return {0: "drone_b", 1: "drone_b", 2: "drone_b", 3: "drone_a", 4: "drone_b", 5: "",
 		6: "drone_a", 7: "drone_a", 8: "wind", 9: "drone_a"}.get(floor_index, "drone_b")
 func ambience_db() -> float: return -16.0
+## How the floor sounds: reverb on the SFX bus (footsteps, doors, impacts).
+## room 0..1, damping 0..1 (soft furnishings absorb), wet 0..1, predelay ms.
+const ACOUSTICS := {
+	0: [0.6, 0.35, 0.28, 30],     # lobby: terrazzo and tile, hard and bright
+	1: [0.55, 0.78, 0.14, 20],    # carpeted office with partitions: dead
+	2: [0.5, 0.6, 0.22, 25],      # the corridor
+	3: [0.82, 0.5, 0.32, 45],     # the archive: a big concrete hall
+	4: [0.3, 0.72, 0.12, 10],     # a furnished home: small and soft
+	5: [0.9, 0.3, 0.08, 60],      # open slab in the rain: almost dry
+	6: [0.6, 0.4, 0.36, 35],      # the upside-down floor: wrong
+	7: [0.86, 0.28, 0.36, 50],    # bare concrete, enclosed
+	8: [0.9, 0.2, 0.04, 80],      # the roof: open air
+	9: [1.0, 0.1, 0.5, 90],       # the blueprint: no walls at all
+}
+func acoustics() -> Array: return ACOUSTICS.get(floor_index, [0.55, 0.6, 0.22, 25])
+
+func _apply_acoustics() -> void:
+	var bus := AudioServer.get_bus_index("SFX")
+	if bus < 0:
+		return
+	for i in AudioServer.get_bus_effect_count(bus):
+		var rv := AudioServer.get_bus_effect(bus, i) as AudioEffectReverb
+		if rv:
+			var a := acoustics()
+			rv.room_size = a[0]; rv.damping = a[1]; rv.wet = a[2]; rv.predelay_msec = a[3]
 func on_item_taken(_id: String, _node: Node3D) -> bool: return false
 func on_use(_id: String, _node: Node3D) -> void: pass
 func apply_checkpoint(_cp: Dictionary) -> void: pass
@@ -198,8 +225,8 @@ func _process(d: float) -> void:
 	hud.set_phone(player.phone_up)
 	hud.set_hiding(player.hiding)
 	hud.set_breath(player.breath, player.hiding)
-	hud.set_status("Torch %d%%   Batteries %d   Chalk %d   Diyas %d" % [
-		int(player.battery), GameState.count("battery"), GameState.count("chalk"), GameState.count("diya")])
+	hud.set_status("Batteries %d   Chalk %d   Diyas %d" % [      # torch charge: the gauge above
+		GameState.count("battery"), GameState.count("chalk"), GameState.count("diya")])
 	if Input.is_action_just_pressed("inventory"):
 		_toggle_inventory()
 	if Input.is_action_just_pressed("voice"):
@@ -356,10 +383,8 @@ func begin_floor() -> void:
 	GameState.floor_num = floor_index
 	GameState.save_game()
 	hud.fade_to(0.0, 1.5)
-	var title := "FLOOR %s — %s" % [GameState.floor_label(floor_index), GameState.floor_name(floor_index)]
-	if GameState.altered_level(floor_index) > 0:
-		title += "\nIt is not the way you left it."
-	hud.message(title, 5)
+	hud.title_card("FLOOR %s" % GameState.floor_label(floor_index), GameState.floor_name(floor_index).to_upper(),
+		"It is not the way you left it." if GameState.altered_level(floor_index) > 0 else "")
 
 func unlock_exit(msg := "Somewhere, a heavy lock turns.") -> void:
 	if exit_unlocked:
@@ -416,6 +441,7 @@ func die(reason: String) -> void:
 	busy = true
 	player.input_enabled = false
 	_sfx.sting.play()
+	var faced := await _face_catcher()
 	hud.glitch(2.0)
 	Haptics.pulse("death", 600, 1.0)
 	await hud.fade_to(1.0, 0.2)
@@ -423,8 +449,28 @@ func die(reason: String) -> void:
 	GameState.deaths += 1
 	Dread.reset(30.0)
 	GameState.save_game()
-	await get_tree().create_timer(2.5, false).timeout
+	await get_tree().create_timer(2.0 if faced else 2.5, false).timeout
 	GameState.go(GameState.floor_scene())
+
+## Caught by the Supervisor: your view is dragged to its face as its arms come
+## up, for half a second, before the screen goes. Returns whether that happened.
+func _face_catcher() -> bool:
+	var s := get_tree().get_first_node_in_group("supervisor") as Node3D
+	if s == null or not is_instance_valid(player) or not s.is_inside_tree() \
+			or s.global_position.distance_to(player.global_position) > 4.0:
+		return false
+	var to := s.global_position + Vector3(0, 1.9, 0) - player.cam.global_position
+	var yaw := atan2(-to.x, -to.z)
+	var pitch := atan2(to.y, Vector2(to.x, to.z).length())
+	var y0 := player.rotation.y
+	var p0 := player.cam.rotation.x
+	var tw := create_tween()
+	tw.tween_method(func(v: float):
+		if is_instance_valid(player):
+			player.rotation.y = lerp_angle(y0, yaw, v)
+			player.cam.rotation.x = lerpf(p0, pitch, v), 0.0, 1.0, 0.22)
+	await get_tree().create_timer(0.5, false).timeout
+	return true
 
 ## Default chalk mark / diya for floors that build into themselves.
 func add_chalk(pos: Vector3, normal: Vector3) -> Label3D:

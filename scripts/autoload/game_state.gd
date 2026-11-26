@@ -54,6 +54,7 @@ var settings := DEFAULT_SETTINGS.duplicate()
 var _applied_once := false
 
 func _ready() -> void:
+	preload("res://scripts/ui/fonts.gd").install()
 	_setup_input()
 	_setup_audio_buses()
 	_setup_ui_sounds()

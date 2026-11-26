@@ -11,6 +11,11 @@ static func get_theme() -> Theme:
 		return _theme
 	var t := Theme.new()
 	t.default_font_size = 20
+	var Fonts := preload("res://scripts/ui/fonts.gd")
+	if Fonts.ui(400):
+		t.default_font = Fonts.ui(400)
+		for cls in ["Button", "OptionButton", "CheckBox"]:
+			t.set_font("font", cls, Fonts.ui(500, 1))
 	var normal := _box(Color(0.07, 0.065, 0.06, 0.92), Color(0.25, 0.22, 0.18))
 	var hover := _box(Color(0.13, 0.11, 0.09, 0.95), ACCENT)
 	var pressed := _box(Color(0.2, 0.16, 0.11, 0.95), ACCENT)

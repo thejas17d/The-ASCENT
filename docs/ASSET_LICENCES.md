@@ -70,6 +70,7 @@ Pages: `https://polyhaven.com/a/<id>`.
 | hanging_picture_frame_02 | lobby, Floor 4 dining room (its glass is replaced with clear glass in code) |
 | metal_toolbox | Floor 5 generator, roof |
 | lightbulb_01 | every hanging bulb fixture (`kit.lamp "bulb"`) |
+| street_lamp_01 | the opening scene's street lamps (v0.11) |
 
 ## Characters and motion capture — Microsoft Rocketbox (MIT)
 Source: https://github.com/microsoft/Microsoft-Rocketbox — **Copyright (c) 2020 Microsoft**, MIT licence.
@@ -122,6 +123,16 @@ Changes made: trimmed, re-pitched at runtime (random pitch), layered and mixed.
 Fluorescent hum, phone ring, whispers, gasp, the footsteps-behind-you, UI tick. Every recorded id
 also keeps a synth fallback, so a missing file degrades to the old sound instead of silence.
 
+## Fonts (v0.11) — `assets/fonts/`, licence files alongside
+| Font | Copyright | Licence | Used for |
+|---|---|---|---|
+| Oswald (variable) | Copyright 2016 The Oswald Project Authors | SIL Open Font License 1.1 (`Oswald_OFL.txt`) | UI, titles, signage — the engine-wide default |
+| Special Elite | Copyright (c) 2010 by Brian J. Bonislawsky DBA Astigmatic (AOETI) | Apache License 2.0 (`SpecialElite_LICENSE.txt`) | notes, register, rule boards |
+| Noto Sans Devanagari | Copyright 2022 The Noto Project Authors | SIL Open Font License 1.1 (`NotoSansDevanagari_OFL.txt`) | Hindi / Marathi signage (fallback) |
+
+Source: https://github.com/google/fonts (`ofl/oswald`, `apache/specialelite`, `ofl/notosansdevanagari`). The licence
+texts are exported with the game (`include_filter`) and printed on the in-game Credits page.
+
 ## Godot Engine (MIT)
 Copyright (c) 2014-present Godot Engine contributors; (c) 2007-2014 Juan Linietsky, Ariel Manzur.
 The Credits screen prints `Engine.get_license_text()`, `Engine.get_copyright_info()` and
@@ -130,7 +141,8 @@ components (FreeType, ENet, mbedTLS, …) always match the exported engine versi
 
 ## Generated for this game (no licence needed)
 - Level geometry (walls, floors, stairs, panelled doors, windows + grilles, skirting, cornices, clocks, signage)
-- `assets/fx/*.png` — torch cookie, grime / water-stain / mould / floor-dirt decals, made by `tools/gen_fx_textures.py` (numpy + PIL, fixed seeds)
+- `assets/fx/*.png` — torch cookie, grime / water-stain / mould / floor-dirt / paan-stain decals, notice-board cork, archive-box fronts, made by `tools/gen_fx_textures.py` (numpy + PIL, fixed seeds)
+- The opening scene's tower, street and rain (`scripts/ui/intro.gd`); procedural reach / head-turn on the Rocketbox skeletons (`scripts/world/reach_modifier.gd`, `look_modifier.gd`)
 - The night skyline (`scripts/world/skyline.gd`), procedural sky, painting canvases
 - Shaders — `shaders/post_fx.gdshader`, `shaders/crt_screen.gdshader`
 

@@ -48,6 +48,14 @@ Spring Spring — tape recorder
 
 Phone ring, hum, whispers, gasps and the footsteps behind you
 are synthesised in code.
+
+
+FONTS
+Oswald — Copyright 2016 The Oswald Project Authors — SIL Open Font License 1.1
+Special Elite — Copyright (c) 2010 by Brian J. Bonislawsky DBA Astigmatic (AOETI)
+    — Apache License 2.0
+Noto Sans Devanagari — Copyright 2022 The Noto Project Authors — SIL Open Font License 1.1
+(full licence texts below)
 """
 
 const ROCKETBOX_MIT := """Microsoft Rocketbox — MIT License
@@ -79,6 +87,10 @@ const SHORT := "Made with Godot Engine  ·  Models: Poly Haven (CC0)  ·  Charac
 ## Everything, including the Godot engine licence and its third-party notices.
 static func full_text() -> String:
 	var s := GAME + "\n\n" + ROCKETBOX_MIT
+	for f in ["Oswald_OFL.txt", "NotoSansDevanagari_OFL.txt", "SpecialElite_LICENSE.txt"]:
+		var p: String = "res://assets/fonts/" + str(f)
+		if FileAccess.file_exists(p):
+			s += "\n\n——— %s ———\n%s" % [str(f).get_basename().replace("_", " — "), FileAccess.get_file_as_string(p)]
 	s += "\n\nGODOT ENGINE\nThis game uses Godot Engine, available under the following license:\n\n"
 	s += Engine.get_license_text()
 	s += "\n\nGodot Engine includes third-party components:\n"

@@ -30,7 +30,9 @@ func _ready() -> void:
 	_box.add_theme_constant_override("separation", 10)
 	add_child(_box)
 	var t := Label.new(); t.text = "THE ASCENT"
-	t.add_theme_font_size_override("font_size", 64)
+	t.add_theme_font_size_override("font_size", 72)
+	if preload("res://scripts/ui/fonts.gd").ui(650, 6):
+		t.add_theme_font_override("font", preload("res://scripts/ui/fonts.gd").ui(650, 6))
 	t.add_theme_color_override("font_color", Color(0.85, 0.8, 0.68))
 	_box.add_child(t)
 	var sub := Label.new(); sub.text = "Meridian Tower  ·  Mumbai  ·  3:33 AM"
@@ -212,4 +214,4 @@ func _new() -> void:
 	GameState.new_game()
 	Dread.reset(0.0)
 	GameState.save_game()
-	get_tree().change_scene_to_file(GameState.floor_scene())
+	get_tree().change_scene_to_file("res://scenes/intro.tscn")   # arrival in the rain, then Floor G

@@ -15,6 +15,16 @@ Measured with `tests/perf.gd` (windowed, vsync off, 180 frames after a 60-frame 
 
 **Auto quality** (Settings → Graphics quality → Auto, the default): integrated GPUs (Intel/UHD/Iris/Radeon Graphics/Vega/Adreno/Mali…) start on **Medium**, discrete GPUs on **High**. During play, if any 4-second window averages slower than 25 ms (< 40 fps), it drops one preset, says so on screen, and remembers it (`auto_level`). Picking a preset by hand turns Auto off.
 
+## v0.11 (windows on 6/7, stairwell decals + probe, fonts, opening scene) — Intel UHD, 1600×900, Medium
+| | menu | intro | G | stair | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Forward+ avg ms | 13.2 | 9.7 | 16.9 | 14.2 | 17.4 | 12.6 | 14.4 | 16.4 | 14.9 | 13.7 | 14.4 | 11.9 | 8.9 |
+| Phone renderer avg ms | 10.4 | 6.4 | 13.1 | 13.2 | 16.0 | 8.8 | 13.7 | 15.1 | 11.8 | 13.7 | 13.1 | 8.7 | 5.0 |
+
+This run was ~25 % faster than the v0.10 run below on the same scenes — the PC's load varies between
+runs (background apps, thermals), so read both as a range: Medium sits between ~9 and ~23 ms on this
+iGPU. One 57 ms spike on Floor 6 (phone renderer, max) — a shader compile on first sight of the windows.
+
 ## v0.10 visual overhaul (measured on this PC: Intel UHD, 1600×900, Medium)
 New at Medium: volumetric fog (48³, torch beams + light shafts), moonlight with shadows through
 windows / open sides, per-room reflection probes, ~30–45 decals per room, downlights under every

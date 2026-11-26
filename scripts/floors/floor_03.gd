@@ -98,14 +98,22 @@ func _shelf(base: Vector3, length: float) -> void:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D; mm.use_colors = true; mm.mesh = BoxMesh.new()
 	var xf: Array = []; var cols: Array = []
+	var faces: Array = []; var face_cols: Array = []
 	for y in [0.12, 0.67, 1.22, 1.77]:
 		var x := -length / 2 + 0.3
 		while x < length / 2 - 0.3:
 			var w := rng.randf_range(0.25, 0.45)
 			if rng.randf() < 0.78:
 				var size := Vector3(w - 0.03, rng.randf_range(0.28, 0.42), 0.5)
-				xf.append(Transform3D(Basis.from_scale(size), base + Vector3(x + w / 2, y + 0.02 + size.y / 2, 0)))
-				cols.append(Color(0.75, 0.68, 0.5).lerp(Color(0.42, 0.37, 0.3), rng.randf()))
+				var c := base + Vector3(x + w / 2, y + 0.02 + size.y / 2, 0)
+				var tint := Color(0.75, 0.68, 0.5).lerp(Color(0.42, 0.37, 0.3), rng.randf())
+				xf.append(Transform3D(Basis.from_scale(size), c))
+				cols.append(tint)
+				# labelled fronts on both aisle sides (cardboard, a scrawled label, a handle hole)
+				var fs := Basis.from_scale(Vector3(size.x * 0.96, size.y * 0.96, 1.0))
+				var ft := Color(1, 1, 1).lerp(Color(0.62, 0.58, 0.5), rng.randf())
+				faces.append(Transform3D(fs, c + Vector3(0, 0, size.z / 2 + 0.002))); face_cols.append(ft)
+				faces.append(Transform3D(Basis(Vector3.UP, PI) * fs, c - Vector3(0, 0, size.z / 2 + 0.002))); face_cols.append(ft)
 			x += w
 	mm.instance_count = xf.size()
 	for i in xf.size():
@@ -114,6 +122,19 @@ func _shelf(base: Vector3, length: float) -> void:
 	var fm := StandardMaterial3D.new(); fm.vertex_color_use_as_albedo = true; fm.roughness = 0.95
 	mmi.material_override = fm
 	nav.add_child(mmi)
+	var tex: Texture2D = preload("res://scripts/systems/mat_lib.gd").fx("archive_box")
+	if tex and faces.size() > 0:
+		var fmm := MultiMesh.new()
+		fmm.transform_format = MultiMesh.TRANSFORM_3D; fmm.use_colors = true; fmm.mesh = QuadMesh.new()
+		fmm.instance_count = faces.size()
+		for i in faces.size():
+			fmm.set_instance_transform(i, faces[i]); fmm.set_instance_color(i, face_cols[i])
+		var fmi := MultiMeshInstance3D.new(); fmi.multimesh = fmm
+		var lm := StandardMaterial3D.new(); lm.albedo_texture = tex; lm.vertex_color_use_as_albedo = true
+		lm.roughness = 0.9
+		fmi.material_override = lm
+		fmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		nav.add_child(fmi)
 
 func Mat_led(c: Color) -> Material:
 	return preload("res://scripts/systems/mat_lib.gd").emissive(c, 4.0)

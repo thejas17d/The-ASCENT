@@ -101,5 +101,16 @@ See `docs/MOBILE_BUILD.md`.
 - [x] Budget kept: Medium ≤ 23.4 ms on the Intel UHD (SSAO moved to High; measured trade), heavy foliage excluded from shadows
 - [x] Every test and capture script now protects the real save/settings (`tests/user_files.gd`)
 - [x] `tests/test_visuals.gd` — 29 checks; all suites: 355 pass
+
+## Phase 11 — the rest of the building, presentation, characters, sound ✅ (v0.11.0)
+- [x] Floors 3, 6, 7 + stairwell dressed: labelled archive boxes, windows onto the city on 6 (upside-down, moonlight from below) and 7 (debris backlit), stairwell balusters + wall rail + grime/damp/paan stains + probe; roof tank with bands, rust, open railings, ladder stiles (colliders unchanged)
+- [x] Kit-wide: lockers are steel almirahs; notice boards are cork with an aluminium frame, pins, stray slips and typed notices; `windowed_wall()`; upright wall stains
+- [x] Presentation: Oswald / Special Elite / Noto Devanagari (licences in-game), floor title cards, paper-and-typewriter documents, torch battery gauge
+- [x] Opening scene (New Game): Meridian Tower in the monsoon, sodium lamps on wet tarmac, the lit eighth-floor window, a figure in the doorway gone in the lightning — skippable
+- [x] Characters: the Supervisor watches you while it hunts and reaches for you when it catches you (procedural arms + head on the mocap); you're turned to face it for half a second; Mother's blank face turns to find you, tilting, before her body follows
+- [x] Sound: per-floor acoustics (reverb) — a ringing stairwell, a dead office, open-air roof
+- [x] Test guard is crash-proof (backup on disk, restored by the next run)
+- [x] `tests/test_visuals.gd` — 49 checks; all suites: 376 pass
+- [ ] Not done: phone ring / whispers are still synthesised (no licensed recordings found); baked lighting; real-phone test
 ## Phase 7 — touch controls, gyro, haptics, Android export
 ## Phase 8 — QA and release checklist

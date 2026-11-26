@@ -4,6 +4,7 @@ extends CanvasLayer
 ## and the black fade (top).
 
 const UiTheme := preload("res://scripts/ui/ui_theme.gd")
+const Fonts := preload("res://scripts/ui/fonts.gd")
 const POST := preload("res://shaders/post_fx.gdshader")
 
 var post: ShaderMaterial
@@ -20,6 +21,10 @@ var _msg_t := 0.0
 var _tear_t := 0.0
 var _fade_tw: Tween
 var _dialog: PanelContainer
+var player: Node                 # set by FloorBase: the battery gauge reads it
+var _gauge: Control
+var _card: VBoxContainer
+var _card_tw: Tween
 signal dialog_done(result)
 
 func _ready() -> void:
@@ -54,15 +59,40 @@ func _ready() -> void:
 	_breath.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_breath.offset_left = -150; _breath.offset_right = 150; _breath.offset_top = -64; _breath.offset_bottom = -54
 	_breath.visible = false; add_child(_breath)
+	# reading panel: an aged sheet of paper with typed text (notes, register, rules)
 	_panel = PanelContainer.new()
 	_panel.theme = UiTheme.get_theme()
 	_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_panel.custom_minimum_size = Vector2(680, 380)
-	_panel.offset_left = -340; _panel.offset_top = -190
+	_panel.custom_minimum_size = Vector2(700, 400)
+	_panel.offset_left = -350; _panel.offset_top = -200
+	var paper := StyleBoxFlat.new()
+	paper.bg_color = Color(0.83, 0.79, 0.67); paper.border_color = Color(0.55, 0.47, 0.33)
+	paper.set_border_width_all(2); paper.set_corner_radius_all(2)
+	paper.shadow_color = Color(0, 0, 0, 0.6); paper.shadow_size = 14
+	paper.content_margin_left = 40; paper.content_margin_right = 40
+	paper.content_margin_top = 30; paper.content_margin_bottom = 30
+	_panel.add_theme_stylebox_override("panel", paper)
 	_panel_text = Label.new(); _panel_text.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_panel_text.add_theme_font_size_override("font_size", 21)
+	_panel_text.add_theme_color_override("font_color", Color(0.13, 0.11, 0.09))
+	if Fonts.typewriter():
+		_panel_text.add_theme_font_override("font", Fonts.typewriter())
 	_panel.add_child(_panel_text); _panel.visible = false
 	add_child(_panel)
+	# floor title card (centre) and the torch battery gauge (bottom left)
+	_card = VBoxContainer.new()
+	_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_card.offset_left = -500; _card.offset_right = 500; _card.offset_top = -170; _card.offset_bottom = -20
+	_card.alignment = BoxContainer.ALIGNMENT_CENTER
+	_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card.modulate.a = 0.0
+	add_child(_card)
+	_gauge = Control.new()
+	_gauge.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_gauge.offset_left = 28; _gauge.offset_top = -82; _gauge.offset_right = 140; _gauge.offset_bottom = -58
+	_gauge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gauge.draw.connect(_draw_gauge)
+	add_child(_gauge)
 	# 4) fade on top
 	_fade = ColorRect.new(); _fade.color = Color(0, 0, 0, 1)
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -120,12 +150,58 @@ func _process(d: float) -> void:
 			_msg.text = ""
 	if _tear_t > 0:
 		_tear_t -= d
+	_gauge.queue_redraw()
 	var flashing_ok: bool = not GameState.settings.get("reduced_flashing", false)
 	post.set_shader_parameter("tear", clamp(_tear_t, 0.0, 1.0) if flashing_ok else 0.0)
 	post.set_shader_parameter("grain", 0.045 * float(GameState.settings.get("grain", 1.0)))
 
 func message(t: String, secs := 4.0) -> void:
 	_msg.text = t; _msg_t = secs
+
+## Cinematic floor title: "FLOOR 3" over "RECORDS & ARCHIVE", fades in and out.
+func title_card(big: String, small: String, note := "") -> void:
+	for c in _card.get_children():
+		c.queue_free()
+	for row in [[big, 76, Fonts.ui(600, 10), UiTheme.INK], [small, 26, Fonts.ui(400, 5), Color(0.78, 0.6, 0.3)], [note, 20, Fonts.ui(300, 1), UiTheme.DIM]]:
+		if str(row[0]) == "":
+			continue
+		var l := Label.new(); l.text = str(row[0])
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.add_theme_font_size_override("font_size", row[1])
+		if row[2]:
+			l.add_theme_font_override("font", row[2])
+		l.add_theme_color_override("font_color", row[3])
+		l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		l.add_theme_constant_override("shadow_offset_x", 3); l.add_theme_constant_override("shadow_offset_y", 3)
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_card.add_child(l)
+	if _card_tw and _card_tw.is_valid():
+		_card_tw.kill()
+	_card.modulate.a = 0.0
+	_card_tw = create_tween()
+	_card_tw.tween_property(_card, "modulate:a", 1.0, 1.4).set_delay(0.6)
+	_card_tw.tween_interval(2.6)
+	_card_tw.tween_property(_card, "modulate:a", 0.0, 1.6)
+
+func title_card_text() -> String:
+	return " / ".join(_card.get_children().filter(func(c): return not c.is_queued_for_deletion()).map(func(c): return c.text))
+
+## Torch battery: a small cell that empties, turns amber, then blinks red.
+func _draw_gauge() -> void:
+	if player == null or not is_instance_valid(player) or not ("battery" in player):
+		return
+	var b: float = clampf(player.battery / 100.0, 0.0, 1.0)
+	var col := UiTheme.INK
+	if b < 0.15:
+		col = Color(0.9, 0.2, 0.15) if int(Time.get_ticks_msec() / 400) % 2 == 0 else Color(0.4, 0.1, 0.08)
+	elif b < 0.4:
+		col = Color(0.95, 0.65, 0.2)
+	col.a = 0.8
+	_gauge.draw_rect(Rect2(0, 2, 40, 18), col, false, 2.0)
+	_gauge.draw_rect(Rect2(40, 7, 4, 8), col)
+	_gauge.draw_rect(Rect2(3, 5, 34 * b, 12), col)
+	var f: Font = Fonts.ui(500) if Fonts.ui(500) else ThemeDB.fallback_font
+	_gauge.draw_string(f, Vector2(52, 18), "%d%%" % int(round(b * 100.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, col)
 
 func set_prompt(t: String) -> void:
 	_prompt.text = t
@@ -154,6 +230,9 @@ func set_hiding(on: bool) -> void:
 
 func show_panel(t: String) -> void:
 	_panel_text.text = t; _panel.visible = true
+	if _card_tw and _card_tw.is_valid():
+		_card_tw.kill()
+	_card.modulate.a = 0.0      # a document always reads clean
 
 func hide_panel() -> void:
 	_panel.visible = false

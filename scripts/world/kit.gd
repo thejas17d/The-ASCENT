@@ -46,6 +46,9 @@ func _init(r: Node3D) -> void:
 	m.door_panel = Mat.pbr("sapele_veneer", 0.8, Color(0.46, 0.3, 0.21), 0.7)
 	m.chrome = Mat.solid(Color(0.78, 0.78, 0.76), 0.22, 0.9)
 	m.enamel = Mat.solid(Color(0.86, 0.85, 0.8), 0.32)
+	m.cork = StandardMaterial3D.new()
+	m.cork.albedo_texture = Mat.fx("cork"); m.cork.roughness = 0.95
+	m.cork.uv1_triplanar = true; m.cork.uv1_scale = Vector3.ONE * 1.4
 	m.glass = StandardMaterial3D.new()
 	m.glass.albedo_color = Color(0.7, 0.8, 0.85, 0.1)
 	m.glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -206,10 +209,35 @@ func _window(face: Vector3, along_x: bool, inward: Vector3, a: float, b: float, 
 
 ## The night outside the windows: sky with the city's sodium glow, towers with
 ## lit windows, and a moon (call after setup_common — it needs the floor's Environment).
-func outside(street_y: float, moon_rot: Vector3, moon_energy := 0.5, seed_val := 77) -> DirectionalLight3D:
-	Skyline.night_sky(Graphics.env, Color(0.012, 0.014, 0.024), Color(0.2, 0.1, 0.045), Color(0.012, 0.01, 0.01), 0.9)
-	Skyline.build(root, Vector3.ZERO, seed_val, street_y, Color(0.02, 0.022, 0.03), Color(1.0, 0.72, 0.38), 0.2)
+## flipped: the city hangs upside down from `street_y` (Floor 6, where you walk on the ceiling).
+func outside(street_y: float, moon_rot: Vector3, moon_energy := 0.5, seed_val := 77, flipped := false) -> DirectionalLight3D:
+	if flipped:
+		Skyline.night_sky(Graphics.env, Color(0.012, 0.01, 0.01), Color(0.2, 0.1, 0.045), Color(0.012, 0.014, 0.024), 0.9)
+		var holder := Node3D.new(); holder.rotation.z = PI; holder.position.y = street_y
+		root.add_child(holder)
+		Skyline.build(holder, Vector3.ZERO, seed_val, -22.0, Color(0.02, 0.022, 0.03), Color(1.0, 0.72, 0.38), 0.2)
+	else:
+		Skyline.night_sky(Graphics.env, Color(0.012, 0.014, 0.024), Color(0.2, 0.1, 0.045), Color(0.012, 0.01, 0.01), 0.9)
+		Skyline.build(root, Vector3.ZERO, seed_val, street_y, Color(0.02, 0.022, 0.03), Color(1.0, 0.72, 0.38), 0.2)
 	return Skyline.moon(root, Color(0.62, 0.7, 0.95), moon_energy, moon_rot)
+
+## A straight 0.2 m wall centred on `line` running a..b along X (along_x) or Z,
+## with barred windows cut into it: windows = [[centre, width], …], sill..top high.
+func windowed_wall(line: Vector3, along_x: bool, a: float, b: float, h: float, mt: Variant, inward: Vector3, windows: Array, sill := 1.1, top := 2.6) -> void:
+	var base := Vector3(0, line.y, line.z) if along_x else Vector3(line.x, line.y, 0)
+	var face := base + inward * 0.1
+	var ws := windows.duplicate()
+	ws.sort_custom(func(p, q): return p[0] < q[0])
+	var cur := a
+	for w in ws:
+		var wa: float = float(w[0]) - float(w[1]) / 2.0
+		var wb: float = float(w[0]) + float(w[1]) / 2.0
+		_wall_piece(base, along_x, cur, wa, 0.0, h, mt)
+		_wall_piece(base, along_x, wa, wb, 0.0, sill, mt)
+		_wall_piece(base, along_x, wa, wb, top, h, mt)
+		_window(face, along_x, inward, wa, wb, sill, top)
+		cur = wb
+	_wall_piece(base, along_x, cur, b, 0.0, h, mt)
 
 ## Decal of dirt creeping up a wall from the floor. `at` is on the wall face at
 ## floor level, `inward` points into the room.
@@ -228,16 +256,19 @@ func grime(at: Vector3, inward: Vector3, width: float, height: float) -> Decal:
 
 ## Projected stain: `normal` points away from the surface (UP for floors,
 ## DOWN for ceilings, inward for walls). kind: water_stain / floor_dirt / mould.
-func stain(at: Vector3, normal: Vector3, size: float, kind := "water_stain") -> Decal:
+func stain(at: Vector3, normal: Vector3, size: float, kind := "water_stain", upright := false) -> Decal:
 	var dc := Decal.new()
 	dc.texture_albedo = Mat.fx(kind)
 	if dc.texture_albedo == null:
 		return null
 	dc.size = Vector3(size, 0.4, size)
-	var ref := Vector3.BACK if absf(normal.y) > 0.9 else Vector3.UP
-	var x := normal.cross(ref).normalized()
-	var z := x.cross(normal).normalized()
-	dc.basis = Basis(x, normal, z).rotated(normal, randf() * TAU)
+	if upright and absf(normal.y) < 0.9:      # wall stain whose drips run downwards
+		dc.basis = Basis(normal.cross(Vector3.DOWN), normal, Vector3.DOWN)
+	else:
+		var ref := Vector3.BACK if absf(normal.y) > 0.9 else Vector3.UP
+		var x := normal.cross(ref).normalized()
+		var z := x.cross(normal).normalized()
+		dc.basis = Basis(x, normal, z).rotated(normal, randf() * TAU)
 	dc.position = at
 	_decal_common(dc)
 	root.add_child(dc)
@@ -351,16 +382,30 @@ func prop(id: String, pos: Vector3, yaw := 0.0, fit := Vector3.ZERO, collide := 
 
 # ---------------------------------------------------------------- props
 func board(pos: Vector3, yaw: float, rules: Array, mirrored := false) -> Node3D:
-	var b := box(Vector3(1.7, 1.25, 0.05), pos, m.ply)
+	var b := box(Vector3(1.7, 1.25, 0.05), pos, m.cork if m.cork.albedo_texture else m.ply)
 	b.rotation.y = yaw
 	b.set_meta("board", true)
 	b.set_meta("prompt", "Read notice board")
 	box(Vector3(1.25, 1.05, 0.01), Vector3(0, 0, 0.03), m.paper, false, b)
+	# aluminium frame, brass pins, old slips nobody took down
+	for yy in [0.645, -0.645]:
+		box(Vector3(1.76, 0.04, 0.07), Vector3(0, yy, 0.01), m.chrome, false, b)
+	for xx in [0.87, -0.87]:
+		box(Vector3(0.04, 1.33, 0.07), Vector3(xx, 0, 0.01), m.chrome, false, b)
+	for c in [Vector2(-0.58, 0.48), Vector2(0.58, 0.48), Vector2(-0.58, -0.48), Vector2(0.58, -0.48)]:
+		var pin := cyl(0.012, 0.012, Vector3(c.x, c.y, 0.04), Color(0.75, 0.1, 0.08), b)
+		pin.rotation.x = PI / 2
+	for slip in [[Vector3(-0.74, 0.3, 0.028), 0.12, Color(0.95, 0.88, 0.45)], [Vector3(0.74, -0.25, 0.028), -0.1, Color(0.95, 0.75, 0.75)]]:
+		var sl := box(Vector3(0.17, 0.24, 0.004), slip[0], slip[2], false, b)
+		sl.rotation.z = slip[1]
 	var txt := "RULES OF THE BUILDING\n"
 	for r in rules:
 		txt += "\n• " + str(r.text)
 	var l := label(txt, Vector3(0, 0, 0.037), 0.0, Color(0.08, 0.07, 0.06), 20, true, b)
 	l.width = 300; l.autowrap_mode = TextServer.AUTOWRAP_WORD
+	var tw: Font = preload("res://scripts/ui/fonts.gd").typewriter()
+	if tw:
+		l.font = tw
 	if mirrored:
 		l.scale.x = -1.0
 	for r in rules:
@@ -428,6 +473,14 @@ func locker(pos: Vector3, yaw: float, label_text := "") -> Node3D:
 	for k in 4:
 		box(Vector3(0.4, 0.02, 0.01), Vector3(0, 0.55 + k * 0.05, -0.305), m.black, false, body)
 	box(Vector3(0.01, 1.9, 0.012), Vector3(0, 0, -0.306), m.black, false, body)
+	# a Godrej-style steel almirah: pressed door panels, chrome handles, brass lock, plinth
+	for sx in [-0.22, 0.22]:
+		box(Vector3(0.34, 1.55, 0.006), Vector3(sx, -0.05, -0.303), m.metal, false, body)
+		box(Vector3(0.018, 0.24, 0.022), Vector3(sign(sx) * 0.05, 0.02, -0.318), m.chrome, false, body)
+	box(Vector3(0.05, 0.08, 0.006), Vector3(0.11, -0.12, -0.304), m.brass, false, body)
+	box(Vector3(0.008, 0.025, 0.004), Vector3(0.11, -0.12, -0.308), m.black, false, body)
+	box(Vector3(0.93, 0.07, 0.63), Vector3(0, -0.965, 0), m.black, false, body)
+	box(Vector3(0.94, 0.035, 0.64), Vector3(0, 1.0, 0), m.metal_grey, false, body)
 	if label_text != "":
 		label(label_text, Vector3(0, 0.25, -0.312), PI, Color(0.1, 0.1, 0.1), 28, true, body)
 	var spot := _spot(Vector3(pos.x, pos.y, pos.z), "locker", 1.55)

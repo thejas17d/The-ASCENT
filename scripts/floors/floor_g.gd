@@ -30,7 +30,7 @@ func _ready() -> void:
 	begin_floor()
 	if GameState.solved_floor(0):
 		_open_everything()
-	hud.message("FLOOR G — RECEPTION\nMove: WASD · Look: mouse · Interact: E · Torch: F · Pause: Esc", 8)
+	hud.message("Move: WASD · Look: mouse · Interact: E · Torch: F · Pause: Esc", 9)
 
 func _build() -> void:
 	var c := Vector3(0, 0, 0)

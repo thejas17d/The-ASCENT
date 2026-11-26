@@ -135,6 +135,93 @@ func _initialize() -> void:
 	for p in ["torch_cookie", "grime_base", "water_stain", "mould", "floor_dirt"]:
 		check(Mat.fx(p) != null, "fx: %s.png imported" % p)
 
+	# ================================================================ round 2: floors, presentation, characters, sound
+	var Fonts = load("res://scripts/ui/fonts.gd")
+	check(ThemeDB.fallback_font is FontVariation and (ThemeDB.fallback_font as FontVariation).base_font.resource_path.ends_with("Oswald.ttf"), "fonts: Oswald is the game-wide font")
+	check(Fonts.typewriter() != null and Fonts.devanagari() != null and (Fonts.ui() as FontVariation).fallbacks.size() == 1, "fonts: typewriter for documents, Devanagari fallback for Hindi signage")
+	var cr: String = load("res://scripts/systems/credits.gd").full_text()
+	check("Oswald Project Authors" in cr and "Astigmatic" in cr and "Noto Project Authors" in cr and "SIL OPEN FONT LICENSE" in cr.to_upper(), "fonts: credited in-game with their licence texts")
+	f = await open("res://scenes/floor_g.tscn")
+	check("FLOOR G" in f.hud.title_card_text() and "RECEPTION" in f.hud.title_card_text(), "hud: floor title card (%s)" % f.hud.title_card_text())
+	f.on_use("register", null)
+	check(f.hud._panel_text.get_theme_font("font") == Fonts.typewriter(), "hud: documents are typed on paper")
+	f.hud.hide_panel()
+	check(f.hud._gauge != null and f.hud.player == f.player, "hud: torch battery gauge reads the player")
+	var lockers := 0
+	await close(f)
+	f = await open("res://scenes/floor_03.tscn")
+	for b in f.find_children("*", "StaticBody3D", true, false):
+		if b.get_meta("hide_kind", "") == "" and b.has_meta("hide") and b.get_child_count() >= 14:
+			lockers += 1
+	check(lockers >= 6, "kit: lockers are steel almirahs (handles, lock, plinth) (%d)" % lockers)
+	var boxes_faced := false
+	for mmi in f.find_children("*", "MultiMeshInstance3D", true, false):
+		var mt = mmi.material_override
+		if mt is StandardMaterial3D and mt.albedo_texture and mt.albedo_texture.resource_path.ends_with("archive_box.png") and mmi.multimesh.instance_count > 100:
+			boxes_faced = true
+	check(boxes_faced, "archive: file boxes have labelled fronts")
+	var board_ok := false
+	for b in f.find_children("*", "StaticBody3D", true, false):
+		if b.has_meta("board"):
+			var lbl = b.find_children("*", "Label3D", false, false)
+			board_ok = b.get_child(1).material_override == f.kit.m.cork and lbl.size() > 0 and lbl[0].font == Fonts.typewriter()
+	check(board_ok, "kit: rule boards are cork with typed notices")
+	var rv: AudioEffectReverb = AudioServer.get_bus_effect(AudioServer.get_bus_index("SFX"), 0)
+	check(is_equal_approx(rv.wet, 0.32) and is_equal_approx(rv.room_size, 0.82), "sound: the archive sounds like a big concrete hall")
+	await close(f)
+	for fl in [["res://scenes/floor_06.tscn", 4], ["res://scenes/floor_07.tscn", 4]]:
+		f = await open(fl[0])
+		var panes := 0
+		for b in f.find_children("*", "StaticBody3D", true, false):
+			for mi in b.find_children("*", "MeshInstance3D", false, false):
+				if mi.material_override == f.kit.m.glass:
+					panes += 1
+		check(panes == fl[1] and G.env.background_mode == Environment.BG_SKY, "%s: barred windows onto the night (%d)" % [fl[0].get_file(), panes])
+		await close(f)
+	f = await open("res://scenes/stairwell.tscn")
+	rv = AudioServer.get_bus_effect(AudioServer.get_bus_index("SFX"), 0)
+	var paan := f.find_children("*", "Decal", true, false).filter(func(dc): return dc.texture_albedo and dc.texture_albedo.resource_path.ends_with("paan_stain.png"))
+	check(paan.size() == 2 and is_equal_approx(rv.wet, 0.42), "stairwell: paan-stained corners, a ringing concrete shaft")
+	await close(f)
+	# characters: the Supervisor stares and reaches, Mother's head turns
+	f = await open("res://scenes/floor_05.tscn")
+	check(f.sup.look_mod != null and f.sup.reach_mod != null, "supervisor: look + reach modifiers on its skeleton")
+	f.sup.activate(f.player.global_position + Vector3(0, 0, -1.5))
+	f.sup._set_state(f.sup.S.ATTACK)
+	await wait(0.45)
+	check(f.sup.reach_mod.amount > 0.9 and f.sup.look_mod.amount > 0.9, "supervisor: the catch — its arms come up, its head locks on you")
+	f.sup._set_state(f.sup.S.PATROL)
+	check(f.sup.reach_mod.amount == 0.0, "supervisor: arms drop when the catch is over")
+	await close(f)
+	var C = load("res://scripts/world/characters.gd")
+	var who: Node3D = C.spawn("Construction_Male_02", {"idle": "m_idle_neutral_01"}, {"height": 2.0})
+	root.add_child(who); C.play(who, "idle")
+	var sk: Skeleton3D = C.skeleton(who)
+	var rm = load("res://scripts/world/reach_modifier.gd").new(); sk.add_child(rm)
+	var hand := sk.find_bone("Bip01 R Hand")
+	var tgt := Vector3(0.0, 1.6, 2.0)
+	var dist := [0.0]
+	sk.skeleton_updated.connect(func(): dist[0] = (sk.global_transform * sk.get_bone_global_pose(hand)).origin.distance_to(tgt))
+	await process_frame; await process_frame
+	var rest: float = dist[0]
+	rm.target = tgt; rm.amount = 1.0
+	await process_frame; await process_frame
+	check(dist[0] < rest - 0.3, "reach: hands move toward the target (%.2f -> %.2f m)" % [rest, dist[0]])
+	who.queue_free()
+	f = await open("res://scenes/floor_04.tscn")
+	check(f._mother_look != null, "mother: her head can turn on its own (look modifier)")
+	await close(f)
+	# the opening
+	gs.new_game()          # as the menu does before the intro
+	gs.last_scene_request = ""
+	var intro = load("res://scenes/intro.tscn").instantiate(); root.add_child(intro)
+	await wait(0.5)
+	check(intro.tower != null and intro.figure != null and intro.find_children("Rain", "GPUParticles3D", false, false).size() == 1, "intro: the tower, the rain and the figure in the doorway")
+	intro.skip()
+	await wait(1.3)
+	check(gs.last_scene_request == gs.FLOOR_SCENES[0], "intro: skipping goes straight to Floor G")
+	intro.queue_free(); await process_frame
+
 	if save_bak != "":
 		var fw := FileAccess.open(gs.SAVE_PATH, FileAccess.WRITE); fw.store_string(save_bak); fw.close()
 	print("\n%d failure(s)" % fails)

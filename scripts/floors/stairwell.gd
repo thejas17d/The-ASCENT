@@ -53,9 +53,28 @@ func _build(from: int) -> void:
 	kit.box(Vector3(2.6, 3.0, 0.2), Vector3(0, 4.5, -8.3), wall)
 	kit.box(Vector3(2.6, 3.0, 0.2), Vector3(0, 1.4, -8.3), wall)   # closes the void under the top landing
 	kit.box(Vector3(2.6, 0.2, 9.0), Vector3(0, 6.1, -3.5), kit.m.ceiling)
-	# handrail
+	# handrail on balusters (one per step), newel posts, and a wall rail opposite
 	var rail := kit.box(Vector3(0.05, 0.05, 5.1), Vector3(1.0, 2.35, -4.0), kit.m.metal_grey, false)
 	rail.rotation.x = atan2(3.0, 4.0)
+	for i in 12:
+		var z := -2.17 - i * 0.333
+		var ys := (-z - 2.0) * 0.75
+		kit.box(Vector3(0.022, 0.86, 0.022), Vector3(1.0, ys + 0.43, z), kit.m.metal_grey, false)
+	kit.box(Vector3(0.06, 1.0, 0.06), Vector3(1.0, 0.5, -1.95), kit.m.metal_grey, false)
+	kit.box(Vector3(0.06, 1.0, 0.06), Vector3(1.0, 3.5, -6.05), kit.m.metal_grey, false)
+	var wall_rail := kit.box(Vector3(0.045, 0.045, 5.1), Vector3(-1.03, 2.35, -4.0), kit.m.metal_grey, false)
+	wall_rail.rotation.x = atan2(3.0, 4.0)
+	# decay: grime at the landings, damp, mould, and paan spat into the corners
+	kit.grime(Vector3(-1.1, 0.0, -0.9), Vector3.RIGHT, 1.8, 0.8)
+	kit.grime(Vector3(1.1, 0.0, -0.9), Vector3.LEFT, 1.8, 0.8)
+	kit.grime(Vector3(-1.1, 3.0, -7.1), Vector3.RIGHT, 1.8, 0.7)
+	kit.grime(Vector3(1.1, 3.0, -7.1), Vector3.LEFT, 1.8, 0.7)
+	kit.stain(Vector3(1.1, 0.55, -1.75), Vector3.LEFT, 0.6, "paan_stain", true)
+	kit.stain(Vector3(-1.1, 3.6, -7.7), Vector3.RIGHT, 0.55, "paan_stain", true)
+	kit.stain(Vector3(0, 6.0, -4.2), Vector3.DOWN, 1.3)
+	kit.stain(Vector3(-1.1, 5.3, -7.4), Vector3.RIGHT, 0.9, "mould")
+	kit.stain(Vector3(1.1, 4.8, -3.0), Vector3.LEFT, 1.1, "water_stain", true)
+	kit.probe(Vector3(0, 3.0, -3.6), Vector3(2.2, 6.0, 9.0))
 	# doors: the one behind you is gone; the one above leads on
 	kit.box(Vector3(1.0, 2.1, 0.06), Vector3(0, 1.05, 0.47), kit.m.metal).set_meta("prompt", "The way down is gone")
 	var sign := "FLOOR %s ▲" % GameState.floor_label(from + 1)
@@ -85,6 +104,8 @@ func complete_floor() -> void:
 func world_root() -> Node3D: return self
 func floor_lights() -> Array: return kit.lights
 func surface_at(_p: Vector3) -> String: return "concrete"
+## A concrete shaft: every step rings up and down the stairs.
+func acoustics() -> Array: return [0.72, 0.18, 0.42, 20]
 
 func _process(d: float) -> void:
 	super._process(d)

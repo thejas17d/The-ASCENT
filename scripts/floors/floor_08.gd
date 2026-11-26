@@ -63,18 +63,41 @@ func _build() -> void:
 		for dz in [-1.2, 1.2]:
 			kit.box(Vector3(0.2, TANK_TOP, 0.2), TANK + Vector3(dx, TANK_TOP / 2, dz), kit.m.metal_grey)
 	kit.cyl(1.6, 2.6, TANK + Vector3(0, TANK_TOP - 1.45, 0), kit.m.metal)   # the tank; you stand on its lid
+	for by in [2.6, 1.9, 1.0, 0.3]:          # riveted steel bands
+		kit.cyl(1.635, 0.07, TANK + Vector3(0, TANK_TOP - by, 0), kit.m.metal_grey)
+	for k in 4:                               # rust bleeding down from the lid
+		var a := k * TAU / 4.0 + 0.4
+		var n := Vector3(cos(a), 0, sin(a))
+		kit.stain(TANK + n * 1.6 + Vector3(0, TANK_TOP - 0.9, 0), n, 1.3, "water_stain", true)
 	kit.box(Vector3(3.6, 0.12, 3.6), TANK + Vector3(0, TANK_TOP - 0.06, 0), kit.m.metal_grey)
-	# railings on the tank top (open toward the catwalk, +X)
+	kit.cyl(0.35, 0.05, TANK + Vector3(-0.6, TANK_TOP + 0.02, -0.5), kit.m.metal)   # manhole lid
+	# railings on the tank top (open toward the catwalk, +X): the solid panels stay as
+	# invisible barriers; what you see is a top rail, a mid rail and posts
 	for r in [[Vector3(-1.8, 0, 0), Vector3(0.05, 1.0, 3.6)], [Vector3(0, 0, -1.8), Vector3(3.6, 1.0, 0.05)], [Vector3(0, 0, 1.8), Vector3(3.6, 1.0, 0.05)]]:
-		kit.box(r[1], TANK + Vector3(0, TANK_TOP + 0.5, 0) + r[0], kit.m.metal_grey)
+		var panel: Node3D = kit.box(r[1], TANK + Vector3(0, TANK_TOP + 0.5, 0) + r[0], kit.m.metal_grey)
+		(panel.get_child(1) as MeshInstance3D).visible = false
+		var c: Vector3 = TANK + Vector3(0, TANK_TOP, 0) + r[0]
+		var along_x: bool = r[1].x > r[1].z
+		var len: float = maxf(r[1].x, r[1].z)
+		for yy in [1.0, 0.5]:
+			kit.box(Vector3(len, 0.04, 0.04) if along_x else Vector3(0.04, 0.04, len), c + Vector3(0, yy, 0), kit.m.metal_grey, false)
+		for k in 5:
+			var t := -len / 2 + k * len / 4.0
+			kit.box(Vector3(0.04, 1.0, 0.04), c + (Vector3(t, 0.5, 0) if along_x else Vector3(0, 0.5, t)), kit.m.metal_grey, false)
 	var ladder: Node3D = kit.box(Vector3(0.6, TANK_TOP, 0.12), TANK + Vector3(0, TANK_TOP / 2, 1.9), kit.m.metal_grey)
 	ladder.set_meta("use", "ladder"); ladder.set_meta("prompt", "Climb the ladder")
+	(ladder.get_child(1) as MeshInstance3D).visible = false     # keep the collider, show stiles + rungs
+	for sx in [-0.28, 0.28]:
+		kit.box(Vector3(0.05, TANK_TOP, 0.07), TANK + Vector3(sx, TANK_TOP / 2, 1.97), kit.m.metal_grey, false)
 	for k in 18:
 		kit.box(Vector3(0.6, 0.03, 0.05), TANK + Vector3(0, 0.3 + k * 0.38, 1.97), kit.m.metal_grey, false)
 	# catwalk from the tank to the crane platform, with railings
 	kit.box(Vector3(14.2, 0.1, 1.0), Vector3(0.1, TANK_TOP - 0.05, -6), kit.m.metal_grey)
 	for z in [-6.5, -5.5]:
 		kit.box(Vector3(14.2, 0.05, 0.05), Vector3(0.1, TANK_TOP + 1.0, z), kit.m.metal_grey)
+		kit.box(Vector3(14.2, 0.04, 0.04), Vector3(0.1, TANK_TOP + 0.5, z), kit.m.metal_grey, false)
+		for k in 11:
+			kit.box(Vector3(0.04, 1.0, 0.04), Vector3(-7.0 + k * 1.42, TANK_TOP + 0.5, z), kit.m.metal_grey, false)
 		kit.box(Vector3(14.2, 1.1, 0.04), Vector3(0.1, TANK_TOP + 0.5, z), Color(0, 0, 0)).get_child(1).visible = false
 	# crane: tower under the platform, boom out over the city
 	kit.box(Vector3(3.0, 0.15, 3.0), Vector3(8.2, TANK_TOP - 0.07, -6), kit.m.metal_grey)

@@ -6,6 +6,7 @@ extends SceneTree
 var _user_files := preload("res://tests/user_files.gd").backup()   # never touch the player's save
 const SCENES := [
 	["menu", "res://scenes/menu.tscn", Vector3.ZERO, 0.0],
+	["intro", "res://scenes/intro.tscn", Vector3.ZERO, 0.0],
 	["G", "res://scenes/floor_g.tscn", Vector3(0, 0.05, 4.6), 0.0],
 	["stair", "res://scenes/stairwell.tscn", Vector3(0, 0.05, -0.8), 0.0],
 	["1", "res://scenes/floor_01.tscn", Vector3(0, 0.05, -2.0), 0.0],

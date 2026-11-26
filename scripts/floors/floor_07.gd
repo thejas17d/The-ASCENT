@@ -27,6 +27,7 @@ func _ready() -> void:
 	kit = Kit.new(self)
 	_build()
 	setup_common()
+	kit.outside(-24.5, Vector3(-0.32, PI + 0.25, 0), 0.9, 707)   # moon through the north windows
 	director.enabled = false
 	spawn = Vector3(0, 0.05, 10.5)
 	_spawn_workers()
@@ -41,6 +42,10 @@ func _build() -> void:
 	for e in [[Vector3(0, 0, 12), Vector3(30, 0, 0.2)], [Vector3(0, 0, -14), Vector3(30, 0, 0.2)],
 			[Vector3(-15, 0, -1), Vector3(0.2, 0, 26)], [Vector3(15, 0, -1), Vector3(0.2, 0, 26)]]:
 		var p: Vector3 = e[0]; var sz: Vector3 = e[1]
+		if p.z < -13.0:      # north wall: windows, so the debris hangs against the city
+			kit.windowed_wall(Vector3(0, 0, -14), true, -15.0, 15.0, 3.6, kit.m.paint, Vector3.BACK,
+				[[-10.0, 2.2], [-5.0, 2.2], [5.0, 2.2], [10.0, 2.2]], 1.2, 2.9)
+			continue
 		kit.box(Vector3(max(sz.x, 0.2), 3.6, max(sz.z, 0.2)), p + Vector3(0, 1.8, 0), kit.m.paint)
 	for x in [-10.0, -5.0, 5.0, 10.0]:
 		for z in [6.0, 1.0, -4.0, -9.0]:

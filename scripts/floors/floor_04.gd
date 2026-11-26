@@ -228,6 +228,7 @@ func _seg(c: Vector3, s: Vector3, lintel_from := 0.0) -> void:
 		kit.box(Vector3(w, 3.0, d), c + Vector3(0, 1.5, 0), kit.m.paint_warm)
 
 var _mother_avatar: Node3D
+var _mother_look: SkeletonModifier3D
 
 func _build_mother() -> void:
 	mother = Node3D.new(); add_child(mother)
@@ -241,6 +242,10 @@ func _build_mother() -> void:
 		mother.add_child(_mother_avatar)
 		C.play(_mother_avatar, "idle")
 		_mother_head = Node3D.new(); _mother_head.position = Vector3(0, 1.5, 0); mother.add_child(_mother_head)
+		var sk := C.skeleton(_mother_avatar)
+		if sk:
+			_mother_look = preload("res://scripts/world/look_modifier.gd").new(); sk.add_child(_mother_look)
+			_mother_look.call_deferred("setup", _mother_avatar)
 		return
 	var saree := Mat_solid(Color(0.55, 0.08, 0.08), 0.85)
 	var skin := Mat_solid(Color(0.42, 0.3, 0.22), 0.7)
@@ -415,15 +420,21 @@ func _update_mother(d: float) -> void:
 		_mother_try += d
 		_mother_head.rotation.z = lerp(_mother_head.rotation.z, 0.35, d * 2.0)
 		if _mother_avatar:
-			# she stops, and turns her blank face toward you
+			# she stops; her blank face turns to find you first, tilting, and the body follows
 			preload("res://scripts/world/characters.gd").play(_mother_avatar, "idle", 0.2)
 			var tp := player.global_position - mother.global_position
-			mother.rotation.y = lerp_angle(mother.rotation.y, atan2(-tp.x, -tp.z), d * 2.5)
+			mother.rotation.y = lerp_angle(mother.rotation.y, atan2(-tp.x, -tp.z), d * 0.9)
+			if _mother_look:
+				_mother_look.target = player.cam.global_position
+				_mother_look.tilt = 0.4
+				_mother_look.amount = move_toward(_mother_look.amount, 1.0, d * 0.7)
 		if _mother_try >= MOTHER_TRY:
 			fall_down("She tried to look at you. She has no face to look with.")
 		return
 	_mother_try = 0.0
 	_mother_head.rotation.z = lerp(_mother_head.rotation.z, 0.0, d * 3.0)
+	if _mother_look:
+		_mother_look.amount = move_toward(_mother_look.amount, 0.0, d * 1.2)
 	if _mother_wait > 0.0:
 		_mother_wait -= d
 		if _mother_avatar:

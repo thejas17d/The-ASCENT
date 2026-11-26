@@ -58,8 +58,11 @@ var _step_t := 0.0
 var _steps: AudioStreamPlayer3D
 var _rng := RandomNumberGenerator.new()
 var avatar: Node3D            # Rocketbox body (null → primitive fallback)
+var look_mod: SkeletonModifier3D    # head tracks you while it chases
+var reach_mod: SkeletonModifier3D   # both arms come up when it catches you
 
 func _ready() -> void:
+	add_to_group("supervisor")     # floors find it for the catch beat
 	_rng.randomize()
 	if cfg.is_empty():
 		cfg = JSON.parse_string(FileAccess.open("res://data/ai/supervisor.json", FileAccess.READ).get_as_text())
@@ -102,6 +105,11 @@ func _build_body() -> void:
 		Characters.play(avatar, "idle")
 		_head = Node3D.new(); _head.position = Vector3(0, 2.02, 0); add_child(_head)
 		_add_lamp()
+		var sk := Characters.skeleton(avatar)
+		if sk:
+			look_mod = preload("res://scripts/world/look_modifier.gd").new(); sk.add_child(look_mod)
+			reach_mod = preload("res://scripts/world/reach_modifier.gd").new(); sk.add_child(reach_mod)
+			look_mod.call_deferred("setup", avatar)
 		return
 	var coat := Mat.solid(Color(0.03, 0.03, 0.032), 0.95)
 	var skin := Mat.solid(Color(0.02, 0.018, 0.016), 0.9)
@@ -377,6 +385,11 @@ func _set_state(s: int) -> void:
 		S.RETURN:
 			_set_lamp(Color(1.0, 0.82, 0.45), 0.9)
 			_go(_nearest_waypoint())
+	if reach_mod:
+		if s == S.ATTACK:
+			_lunge()
+		elif prev == S.ATTACK:
+			reach_mod.amount = 0.0
 	if s == S.SEARCH:
 		# re-acquiring you needs fresh perception, not leftover alarm
 		awareness = min(awareness, float(cfg.chase_at) * 0.7)
@@ -501,8 +514,25 @@ func _face(p: Vector3, d: float, rate: float) -> void:
 	var target_yaw := atan2(-flat.x, -flat.z)
 	rotation.y = lerp_angle(rotation.y, target_yaw, clamp(d * rate, 0.0, 1.0))
 
+## The catch: its head snaps to you and both arms come up — layered on the mocap.
+func _lunge() -> void:
+	if reach_mod == null or player == null:
+		return
+	var eye: Vector3 = player.cam.global_position if "cam" in player and player.cam else player.global_position + Vector3(0, 1.5, 0)
+	reach_mod.target = eye; look_mod.target = eye
+	var tw := create_tween().set_parallel()
+	tw.tween_property(reach_mod, "amount", 1.0, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(look_mod, "amount", 1.0, 0.15)
+	_set_lamp(Color(1.0, 0.05, 0.02), 4.0)
+
 func _animate(d: float) -> void:
 	var spd := Vector2(velocity.x, velocity.z).length()
+	if look_mod and player:
+		# it watches you while it hunts you; the head turns on its own, ahead of the body
+		var want := 0.75 if state == S.CHASE or state == S.SUSPICIOUS else (1.0 if state == S.ATTACK else 0.0)
+		look_mod.amount = move_toward(look_mod.amount, want, d * 2.0)
+		if look_mod.amount > 0.0 and state != S.ATTACK:
+			look_mod.target = player.global_position + Vector3(0, 1.5, 0)
 	if spd > 0.2:
 		_walk += d * spd * 3.2
 		_step_t -= d

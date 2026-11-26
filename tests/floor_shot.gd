@@ -9,7 +9,7 @@ const VIEWS := {
 	"3": ["res://scenes/floor_03.tscn", [[Vector3(0, 0.05, 14), 0.0, 0.0, true], [Vector3(-4, 0.05, -1), 1.57, 0.0, true]]],
 	"4": ["res://scenes/floor_04.tscn", [[Vector3(2.5, 0.05, -3.6), -1.2, -0.05, true], [Vector3(-1.2, 0.05, 0.2), 0.3, -0.2, true], [Vector3(-3, 0.05, -4), 1.2, -0.05, false], [Vector3(3, 0.05, -6), -0.5, -0.05, true]]],
 	"5": ["res://scenes/floor_05.tscn", [[Vector3(0, 0.05, 11), 0.0, -0.02, true], [Vector3(-8, 0.05, -4), -0.8, -0.05, true]]],
-	"6": ["res://scenes/floor_06.tscn", [[Vector3(0, 0.05, 8), 0.0, 0.1, true], [Vector3(0, 0.05, -2), 0.0, 0.25, true]]],
+	"6": ["res://scenes/floor_06.tscn", [[Vector3(0, 0.05, 8), 0.0, 0.1, true], [Vector3(0, 0.05, -2), 0.0, 0.25, true], [Vector3(-3.5, 0.05, 1.5), -1.2, 0.35, false]]],
 	"7": ["res://scenes/floor_07.tscn", [[Vector3(-7.5, 0.05, 10.0), 0.55, 0.0, true], [Vector3(6.5, 0.05, -6.5), -0.7, 0.0, true]]],
 	"9": ["res://scenes/floor_09.tscn", [[Vector3(0, 0.05, 6), 0.0, -0.15, false], [Vector3(5, 0.05, 5), 0.8, -0.05, false]]],
 	"gn": ["res://scenes/floor_g.tscn", [[Vector3(-5.6, 0.05, 2.5), 1.57, -0.05, true]]],

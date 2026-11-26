@@ -30,6 +30,7 @@ func _ready() -> void:
 	kit = Kit.new(self)
 	_build()
 	setup_common()
+	kit.outside(H / 2.0, Vector3(0.42, PI / 2 + 0.2, 0), 0.8, 606, true)   # moonlight from below
 	spawn = Vector3(0, 0.05, 9.0)
 	_make_shadow()
 	begin_floor()
@@ -46,7 +47,9 @@ func _build() -> void:
 	kit.box(Vector3(12.4, 0.2, 33.4), Vector3(0, -0.1, -5.5), floor_m)
 	kit.box(Vector3(12.4, 0.2, 33.4), Vector3(0, H + 0.1, -5.5), over_m)
 	kit.box(Vector3(0.2, H, 33.4), Vector3(-6.1, H / 2, -5.5), kit.m.wallpaper)
-	kit.box(Vector3(0.2, H, 33.4), Vector3(6.1, H / 2, -5.5), kit.m.wallpaper)
+	# east wall: windows onto the city — which hangs upside down out there
+	kit.windowed_wall(Vector3(6.1, 0, 0), false, -22.2, 11.2, H, kit.m.wallpaper, Vector3.LEFT,
+		[[8.0, 1.4], [0.0, 1.4], [-8.0, 1.4], [-17.0, 1.4]], 0.9, 2.4)
 	kit.box(Vector3(12.4, H, 0.2), Vector3(0, H / 2, 11.1), kit.m.wallpaper)
 	kit.box(Vector3(12.4, H, 0.2), Vector3(0, H / 2, -22.1), kit.m.wallpaper)
 	# partition walls with doors: z=4 (open arch), z=-4 (door A), z=-12 (door B)
