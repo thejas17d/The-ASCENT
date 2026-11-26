@@ -2,6 +2,12 @@
 First-person paranormal survival horror (Godot 4.4, GDScript, Mobile renderer).
 Climb Meridian Tower, Mumbai — every floor has rules, and some of them lie.
 
+## Download (automatic builds)
+Every push to `main` builds the game on GitHub Actions (`.github/workflows/build.yml`).
+- **Phone:** open https://github.com/thejas17d/The-ASCENT/releases/tag/latest-build on your Android phone and tap **TheAscent-phone.apk** (allow *Install unknown apps* for your browser). arm64, debug-signed test build.
+- **Windows:** download **TheAscent-windows.zip** from the same page, unzip, run `TheAscent.exe`.
+- Each run's files are also kept as an artifact on the run's page (Actions tab, 30 days).
+
 ## Run
 - Double-click `play.cmd`, or in cmd: `"%USERPROFILE%\.godot\Godot_v4.4.1-stable_win64.exe" --path .`
 - Edit: open the folder in the Godot 4.4.1 editor (`~/.godot/Godot_v4.4.1-stable_win64.exe -e --path .`).
